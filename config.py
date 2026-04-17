@@ -9,7 +9,7 @@ TELEGRAM_CHAT_ID = ""  # Chat ID para envio automatico de cartelera
 
 # --- LLM Open Source (Ollama) ---
 OLLAMA_URL = "http://localhost:11434"
-OLLAMA_MODEL = "llama3"  # Modelo a usar: llama3, mistral, gemma2, etc.
+OLLAMA_MODEL = "qwen2.5:3b"  # Modelo a usar: qwen2.5:3b (2GB RAM, buena calidad)
 
 # --- Alternativa: Groq API (LLM en la nube, gratis) ---
 GROQ_API_KEY = ""  # Obtener en console.groq.com (gratis)
