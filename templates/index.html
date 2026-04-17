@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agente de Peliculas - IMDB</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a1a;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+        header {
+            background: linear-gradient(135deg, #1a1a3e 0%, #0d0d2b 100%);
+            padding: 1.5rem 2rem;
+            text-align: center;
+            border-bottom: 2px solid #f5c518;
+        }
+        header h1 {
+            color: #f5c518;
+            font-size: 1.8rem;
+            margin-bottom: 0.3rem;
+        }
+        header p { color: #888; font-size: 0.9rem; }
+        nav {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            padding: 1rem;
+            background: #111;
+        }
+        nav a {
+            color: #f5c518;
+            text-decoration: none;
+            font-weight: bold;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        nav a:hover { background: #222; }
+        .container {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+        .search-box {
+            background: #1a1a2e;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid #333;
+        }
+        .search-box form {
+            display: flex;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+        }
+        .search-box input[type="text"] {
+            flex: 1;
+            min-width: 200px;
+            padding: 0.7rem 1rem;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background: #0a0a1a;
+            color: #fff;
+            font-size: 1rem;
+        }
+        .search-box input[type="text"]:focus {
+            outline: none;
+            border-color: #f5c518;
+        }
+        .search-box select {
+            padding: 0.7rem;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background: #0a0a1a;
+            color: #fff;
+        }
+        .btn {
+            padding: 0.7rem 1.5rem;
+            background: #f5c518;
+            color: #000;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #e0b000; }
+        .error {
+            background: #3a1a1a;
+            border: 1px solid #ff4444;
+            color: #ff6666;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1.5rem;
+        }
+        .movie-card {
+            background: #1a1a2e;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #333;
+            margin-bottom: 1.5rem;
+        }
+        .movie-card .movie-header {
+            display: flex;
+            gap: 1.5rem;
+            padding: 1.5rem;
+        }
+        .movie-card .poster {
+            width: 180px;
+            min-width: 180px;
+            border-radius: 4px;
+            object-fit: cover;
+        }
+        .movie-card .info { flex: 1; }
+        .movie-card h2 {
+            color: #f5c518;
+            margin-bottom: 0.8rem;
+            font-size: 1.5rem;
+        }
+        .movie-card h2 span { color: #888; font-weight: normal; font-size: 1.1rem; }
+        .movie-card .meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .movie-card .tag {
+            background: #2a2a4a;
+            padding: 0.3rem 0.7rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+        .movie-card .rating {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            background: #f5c518;
+            color: #000;
+            padding: 0.3rem 0.7rem;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        .movie-card .synopsis {
+            color: #bbb;
+            line-height: 1.6;
+            margin: 1rem 0;
+        }
+        .movie-card .links a {
+            color: #f5c518;
+            margin-right: 1rem;
+            text-decoration: none;
+        }
+        .movie-card .links a:hover { text-decoration: underline; }
+        .cartelera-item {
+            background: #1a1a2e;
+            border-radius: 8px;
+            padding: 1.2rem;
+            margin-bottom: 1rem;
+            border: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+        .cartelera-item .title-section { flex: 1; }
+        .cartelera-item h3 {
+            color: #f5c518;
+            margin-bottom: 0.3rem;
+        }
+        .cartelera-item .details {
+            color: #999;
+            font-size: 0.9rem;
+        }
+        .cartelera-item .nota-badge {
+            background: #f5c518;
+            color: #000;
+            font-weight: bold;
+            font-size: 1.2rem;
+            padding: 0.5rem 0.8rem;
+            border-radius: 50%;
+            min-width: 45px;
+            text-align: center;
+        }
+        .cines-list {
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: #888;
+        }
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: #555;
+            font-size: 0.85rem;
+        }
+        @media (max-width: 600px) {
+            .movie-card .movie-header { flex-direction: column; align-items: center; }
+            .movie-card .poster { width: 140px; min-width: 140px; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Agente de Peliculas</h1>
+        <p>Busca informacion de cualquier pelicula en IMDB</p>
+    </header>
+
+    <nav>
+        <a href="/">Buscar Pelicula</a>
+        <a href="/cartelera">Cartelera Madrid</a>
+        <a href="/cartelera?filtrar=true">Cartelera Filtrada</a>
+    </nav>
+
+    <div class="container">
+        <!-- Buscador -->
+        <div class="search-box">
+            <form action="/buscar" method="post">
+                <input type="text" name="pelicula" placeholder="Nombre de la pelicula..."
+                       value="{{ query or '' }}" autofocus>
+                <select name="campo">
+                    <option value="">Todos los campos</option>
+                    <option value="nota">Nota</option>
+                    <option value="director">Director</option>
+                    <option value="duracion">Duracion</option>
+                    <option value="sinopsis">Sinopsis</option>
+                    <option value="genero">Genero</option>
+                    <option value="votos">Votos</option>
+                </select>
+                <button type="submit" class="btn">Buscar</button>
+            </form>
+        </div>
+
+        <!-- Error -->
+        {% if error %}
+        <div class="error">{{ error }}</div>
+        {% endif %}
+
+        <!-- Resultado de busqueda -->
+        {% if movie %}
+        <div class="movie-card">
+            <div class="movie-header">
+                {% if movie.poster %}
+                <img class="poster" src="{{ movie.poster }}" alt="{{ movie.titulo }}">
+                {% endif %}
+                <div class="info">
+                    <h2>
+                        {{ movie.titulo }}
+                        <span>({{ movie.año }})</span>
+                    </h2>
+                    <div class="meta">
+                        {% if movie.nota != 'N/A' %}
+                        <span class="rating">&#9733; {{ movie.nota }}/10</span>
+                        {% endif %}
+                        {% if not campo or campo == 'genero' %}
+                        <span class="tag">{{ movie.genero }}</span>
+                        {% endif %}
+                        {% if not campo or campo == 'duracion' %}
+                        <span class="tag">{{ movie.duracion }}</span>
+                        {% endif %}
+                        {% if not campo or campo == 'votos' %}
+                        <span class="tag">{{ "{:,}".format(movie.votos) }} votos</span>
+                        {% endif %}
+                    </div>
+
+                    {% if not campo or campo == 'director' %}
+                    <p><strong>Director:</strong> {{ movie.director }}</p>
+                    {% endif %}
+
+                    {% if not campo or campo == 'sinopsis' %}
+                    <p class="synopsis">{{ movie.sinopsis }}</p>
+                    {% endif %}
+
+                    <div class="links">
+                        <a href="{{ movie.imdb_url }}" target="_blank">Ver en IMDB &#8599;</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Cartelera -->
+        {% if cartelera %}
+        <h2 style="color: #f5c518; margin-bottom: 1rem;">
+            Cartelera de Madrid
+            {% if filtrar %} (Filtrada por perfil) {% endif %}
+            - {{ cartelera|length }} peliculas
+        </h2>
+        {% for m in cartelera %}
+        <div class="cartelera-item">
+            <div class="title-section">
+                <h3>{{ m.titulo }}</h3>
+                <div class="details">
+                    {% if m.genero_imdb %}{{ m.genero_imdb }}{% elif m.genero %}{{ m.genero }}{% endif %}
+                    {% if m.director %} | Dir: {{ m.director }}{% endif %}
+                    {% if m.duracion %} | {{ m.duracion }}{% endif %}
+                </div>
+                {% if m.cines %}
+                <div class="cines-list">
+                    {% for cine, horarios in m.cines.items() %}
+                    <strong>{{ cine }}:</strong> {{ horarios|join(', ') }}<br>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <div class="links" style="margin-top: 0.5rem;">
+                    {% if m.ecartelera_url %}<a href="{{ m.ecartelera_url }}" target="_blank">eCartelera</a>{% endif %}
+                    {% if m.imdb_url %}<a href="{{ m.imdb_url }}" target="_blank">IMDB</a>{% endif %}
+                </div>
+            </div>
+            {% if m.nota_imdb and m.nota_imdb != 'N/A' %}
+            <div class="nota-badge">{{ m.nota_imdb }}</div>
+            {% elif m.nota_ecartelera %}
+            <div class="nota-badge" style="background: #4CAF50;">{{ m.nota_ecartelera }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% endif %}
+    </div>
+
+    <footer>
+        Agente Inteligente de Peliculas - Practica SSII - 2026
+    </footer>
+</body>
+</html>

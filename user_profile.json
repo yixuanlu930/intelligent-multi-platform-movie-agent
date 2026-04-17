@@ -1,0 +1,19 @@
+{
+  "genres": {
+    "Sci-Fi": 6.0,
+    "Action": 6.5,
+    "Drama": 7.0,
+    "Comedy": 6.0,
+    "Horror": 5.5,
+    "Animation": 7.0,
+    "Thriller": 6.5,
+    "Biography": 7.0
+  },
+  "favorite_directors": [
+    "Christopher Nolan",
+    "Denis Villeneuve",
+    "Quentin Tarantino",
+    "Pedro Almodóvar",
+    "Martin Scorsese"
+  ]
+}

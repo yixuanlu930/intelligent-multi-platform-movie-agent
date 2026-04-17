@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+*.pyo
+.claude/
+venv/
+*.egg-info/
+movie_cache.json
+cartelera_cron.log
+*.pdf:Zone.Identifier
