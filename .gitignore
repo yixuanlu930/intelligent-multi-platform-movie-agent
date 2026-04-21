@@ -7,3 +7,9 @@ venv/
 movie_cache.json
 cartelera_cron.log
 *.pdf:Zone.Identifier
+# 🔐 Configuración con secretos y credenciales
+config.py
+config.json
+.env
+config_local.py
+secrets.yaml
