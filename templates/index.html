@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agente de Peliculas - IMDB</title>
+    <title>Agente de Peliculas - SensaCine</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -207,7 +207,7 @@
 <body>
     <header>
         <h1>Agente de Peliculas</h1>
-        <p>Busca informacion de cualquier pelicula en IMDB</p>
+        <p>Busca informacion de cualquier pelicula en SensaCine</p>
     </header>
 
     <nav>
@@ -254,7 +254,7 @@
                     </h2>
                     <div class="meta">
                         {% if movie.nota != 'N/A' %}
-                        <span class="rating">&#9733; {{ movie.nota }}/10</span>
+                        <span class="rating">&#9733; {{ movie.nota }}{{ movie.nota_escala or '/5' }}</span>
                         {% endif %}
                         {% if not campo or campo == 'genero' %}
                         <span class="tag">{{ movie.genero }}</span>
@@ -276,7 +276,9 @@
                     {% endif %}
 
                     <div class="links">
-                        <a href="{{ movie.imdb_url }}" target="_blank">Ver en IMDB &#8599;</a>
+                        {% if movie.url %}
+                        <a href="{{ movie.url }}" target="_blank">Ver en SensaCine &#8599;</a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -295,7 +297,7 @@
             <div class="title-section">
                 <h3>{{ m.titulo }}</h3>
                 <div class="details">
-                    {% if m.genero_imdb %}{{ m.genero_imdb }}{% elif m.genero %}{{ m.genero }}{% endif %}
+                    {% if m.genero_sensacine %}{{ m.genero_sensacine }}{% elif m.genero %}{{ m.genero }}{% endif %}
                     {% if m.director %} | Dir: {{ m.director }}{% endif %}
                     {% if m.duracion %} | {{ m.duracion }}{% endif %}
                 </div>
@@ -308,11 +310,11 @@
                 {% endif %}
                 <div class="links" style="margin-top: 0.5rem;">
                     {% if m.ecartelera_url %}<a href="{{ m.ecartelera_url }}" target="_blank">eCartelera</a>{% endif %}
-                    {% if m.imdb_url %}<a href="{{ m.imdb_url }}" target="_blank">IMDB</a>{% endif %}
+                    {% if m.sensacine_url %}<a href="{{ m.sensacine_url }}" target="_blank">SensaCine</a>{% endif %}
                 </div>
             </div>
-            {% if m.nota_imdb and m.nota_imdb != 'N/A' %}
-            <div class="nota-badge">{{ m.nota_imdb }}</div>
+            {% if m.nota_sensacine and m.nota_sensacine != 'N/A' %}
+            <div class="nota-badge">{{ m.nota_sensacine }}</div>
             {% elif m.nota_ecartelera %}
             <div class="nota-badge" style="background: #4CAF50;">{{ m.nota_ecartelera }}</div>
             {% endif %}

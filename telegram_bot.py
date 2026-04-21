@@ -5,7 +5,7 @@ Bot de Telegram para consultar informacion de peliculas y cartelera de Madrid.
 Comandos:
     /start              - Bienvenida y ayuda
     /pelicula <nombre>  - Info completa de una pelicula
-    /nota <nombre>      - Nota IMDB
+    /nota <nombre>      - Nota SensaCine
     /director <nombre>  - Director
     /duracion <nombre>  - Duracion
     /sinopsis <nombre>  - Sinopsis
@@ -37,7 +37,7 @@ except ImportError:
 
 import config
 from movie_scraper import get_movie_info
-from cartelera_scraper import get_cartelera_madrid, enrich_with_imdb, filter_by_profile, load_user_profile
+from cartelera_scraper import get_cartelera_madrid, enrich_with_sensacine, filter_by_profile, load_user_profile
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -70,8 +70,9 @@ def query_llm(prompt):
 
 def format_movie_response(info, field=None):
     """Formatea la respuesta de una pelicula para Telegram."""
+    escala = info.get("nota_escala", "/5")
     if field == "nota":
-        text = f"⭐ <b>{info['titulo']}</b> ({info['año']})\nNota IMDB: {info['nota']}/10 ({info['votos']:,} votos)"
+        text = f"⭐ <b>{info['titulo']}</b> ({info['año']})\nNota SensaCine: {info['nota']}{escala} ({info['votos']:,} votos)"
     elif field == "director":
         text = f"🎬 <b>{info['titulo']}</b> ({info['año']})\nDirector: {info['director']}"
     elif field == "duracion":
@@ -82,12 +83,12 @@ def format_movie_response(info, field=None):
         text = (
             f"🎬 <b>{info['titulo']}</b> ({info['año']})\n"
             f"{'─' * 25}\n"
-            f"⭐ Nota: {info['nota']}/10 ({info['votos']:,} votos)\n"
+            f"⭐ Nota: {info['nota']}{escala} ({info['votos']:,} votos)\n"
             f"🎭 Género: {info['genero']}\n"
             f"👤 Director: {info['director']}\n"
             f"⏱ Duración: {info['duracion']}\n"
             f"📖 Sinopsis: {info['sinopsis']}\n"
-            f"\n🔗 <a href=\"{info['imdb_url']}\">Ver en IMDB</a>"
+            f"\n🔗 <a href=\"{info['url']}\">Ver en SensaCine</a>"
         )
     return text
 
@@ -101,7 +102,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Puedo darte informacion sobre cualquier pelicula.\n\n"
         "<b>Comandos:</b>\n"
         "/pelicula &lt;nombre&gt; - Info completa\n"
-        "/nota &lt;nombre&gt; - Nota IMDB\n"
+        "/nota &lt;nombre&gt; - Nota SensaCine\n"
         "/director &lt;nombre&gt; - Director\n"
         "/duracion &lt;nombre&gt; - Duracion\n"
         "/sinopsis &lt;nombre&gt; - Sinopsis\n"
@@ -128,10 +129,11 @@ async def pelicula_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     info = get_movie_info(movie_name)
     if info:
         response = format_movie_response(info)
+        escala = info.get("nota_escala", "/5")
         # Intentar enriquecer con LLM
         llm_response = query_llm(
             f"En una frase breve, recomienda o comenta sobre la pelicula '{info['titulo']}' "
-            f"({info['año']}) dirigida por {info['director']}. Nota IMDB: {info['nota']}/10."
+            f"({info['año']}) dirigida por {info['director']}. Nota SensaCine: {info['nota']}{escala}."
         )
         if llm_response:
             response += f"\n\n🤖 <i>{llm_response}</i>"
@@ -192,7 +194,7 @@ async def cartelera_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("🎬 Obteniendo cartelera de Madrid... (puede tardar unos segundos)")
 
     movies = get_cartelera_madrid()
-    movies = enrich_with_imdb(movies)
+    movies = enrich_with_sensacine(movies)
 
     # Aplicar filtro si el usuario lo pide con --filtrar
     if context.args and "filtrar" in context.args:
@@ -201,7 +203,7 @@ async def cartelera_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Ordenar por nota
     def sort_key(m):
-        nota = m.get("nota_imdb", "N/A")
+        nota = m.get("nota_sensacine", "N/A")
         return float(nota) if nota != "N/A" else 0
     movies.sort(key=sort_key, reverse=True)
 
@@ -212,20 +214,21 @@ async def cartelera_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Formatear respuesta
     lines = ["🎬 <b>CARTELERA DE CINE - MADRID</b>\n"]
     for m in movies[:15]:  # Limitar a 15 para no exceder Telegram
-        nota_imdb = m.get("nota_imdb", "N/A")
-        nota_str = f"{nota_imdb}/10" if nota_imdb != "N/A" else "Sin nota"
+        nota_sc = m.get("nota_sensacine", "N/A")
+        escala = m.get("nota_escala", "/5")
+        nota_str = f"{nota_sc}{escala}" if nota_sc != "N/A" else "Sin nota"
         title = m["titulo"]
 
         lines.append(f"<b>{title}</b>")
         lines.append(f"⭐ {nota_str}")
-        if m.get("genero_imdb"):
-            lines.append(f"🎭 {m['genero_imdb']}")
+        if m.get("genero_sensacine"):
+            lines.append(f"🎭 {m['genero_sensacine']}")
 
         links = []
         if m.get("ecartelera_url"):
             links.append(f'<a href="{m["ecartelera_url"]}">eCartelera</a>')
-        if m.get("imdb_url"):
-            links.append(f'<a href="{m["imdb_url"]}">IMDb</a>')
+        if m.get("sensacine_url"):
+            links.append(f'<a href="{m["sensacine_url"]}">SensaCine</a>')
         if links:
             lines.append("🔗 " + " | ".join(links))
         lines.append("")
@@ -262,9 +265,10 @@ async def text_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     info = get_movie_info(movie_name)
     if info:
         response = format_movie_response(info)
+        escala = info.get("nota_escala", "/5")
         llm_response = query_llm(
             f"En una frase breve, recomienda o comenta sobre la pelicula '{info['titulo']}' "
-            f"({info['año']}) dirigida por {info['director']}. Nota IMDB: {info['nota']}/10."
+            f"({info['año']}) dirigida por {info['director']}. Nota SensaCine: {info['nota']}{escala}."
         )
         if llm_response:
             response += f"\n\n🤖 <i>{llm_response}</i>"

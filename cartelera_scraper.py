@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Scraper de cartelera de cine de Madrid desde ecartelera.com.
-Integra los datos con el scraper de IMDB y aplica filtro por perfil de usuario.
+Integra los datos con el scraper de SensaCine y aplica filtro por perfil de usuario.
 
 Uso:
     python cartelera_scraper.py                   # Muestra cartelera completa
@@ -151,31 +151,33 @@ def get_cartelera_madrid():
 
 
 # ============================================================
-# Integracion con IMDB
+# Integracion con SensaCine
 # ============================================================
 
-def enrich_with_imdb(movies):
+def enrich_with_sensacine(movies):
     """
-    Enriquece las peliculas de cartelera con datos de IMDB.
+    Enriquece las peliculas de cartelera con datos de SensaCine.
     """
     enriched = []
     for m in movies:
-        print(f"  Buscando en IMDB: {m['titulo']}...", file=sys.stderr)
-        imdb_info = get_movie_info(m["titulo"])
+        print(f"  Buscando en SensaCine: {m['titulo']}...", file=sys.stderr)
+        sc_info = get_movie_info(m["titulo"])
 
-        if imdb_info:
-            m["nota_imdb"] = imdb_info.get("nota", "N/A")
-            m["votos_imdb"] = imdb_info.get("votos", 0)
-            m["sinopsis"] = imdb_info.get("sinopsis", "")
-            m["genero_imdb"] = imdb_info.get("genero", "")
-            m["imdb_url"] = imdb_info.get("imdb_url", "")
-            m["poster"] = imdb_info.get("poster", "")
+        if sc_info:
+            m["nota_sensacine"] = sc_info.get("nota", "N/A")
+            m["nota_escala"] = sc_info.get("nota_escala", "/5")
+            m["votos_sensacine"] = sc_info.get("votos", 0)
+            m["sinopsis"] = sc_info.get("sinopsis", "")
+            m["genero_sensacine"] = sc_info.get("genero", "")
+            m["sensacine_url"] = sc_info.get("url", "")
+            m["poster"] = sc_info.get("poster", "")
         else:
-            m["nota_imdb"] = "N/A"
-            m["votos_imdb"] = 0
+            m["nota_sensacine"] = "N/A"
+            m["nota_escala"] = "/5"
+            m["votos_sensacine"] = 0
             m["sinopsis"] = ""
-            m["genero_imdb"] = m.get("genero", "")
-            m["imdb_url"] = ""
+            m["genero_sensacine"] = m.get("genero", "")
+            m["sensacine_url"] = ""
             m["poster"] = ""
 
         enriched.append(m)
@@ -200,8 +202,10 @@ def load_user_profile():
 def filter_by_profile(movies, profile=None):
     """
     Filtra peliculas segun el perfil del usuario.
-    - Generos: la nota IMDB debe superar el minimo configurado para ese genero.
+    - Generos: la nota SensaCine debe superar el minimo configurado para ese genero.
     - Directores favoritos: siempre pasan el filtro.
+
+    Nota: el perfil (user_profile.json) define notas minimas en escala SensaCine (/5).
     """
     if profile is None:
         profile = load_user_profile()
@@ -221,12 +225,12 @@ def filter_by_profile(movies, profile=None):
             continue
 
         # Filtro por genero + nota
-        nota = m.get("nota_imdb", "N/A")
+        nota = m.get("nota_sensacine", "N/A")
         if nota == "N/A":
             continue
 
         nota = float(nota)
-        genres_movie = m.get("genero_imdb", "") or m.get("genero", "")
+        genres_movie = m.get("genero_sensacine", "") or m.get("genero", "")
 
         passed = False
         for genre, min_nota in genre_filters.items():
@@ -235,9 +239,9 @@ def filter_by_profile(movies, profile=None):
                     passed = True
                     break
 
-        # Si no tiene genero configurado, dejamos pasar si supera nota 7
+        # Si no tiene genero configurado, dejamos pasar si supera la nota minima por defecto
         if not passed and not any(g.lower() in genres_movie.lower() for g in genre_filters):
-            if nota >= 7.0:
+            if nota >= 3.5:
                 passed = True
 
         if passed:
@@ -292,16 +296,17 @@ def format_cartelera_text(movies):
     lines.append("=" * 55)
 
     for m in movies:
-        nota_imdb = m.get("nota_imdb", "N/A")
-        nota_str = f"{nota_imdb}/10" if nota_imdb != "N/A" else "Sin nota"
+        nota_sc = m.get("nota_sensacine", "N/A")
+        escala = m.get("nota_escala", "/5")
+        nota_str = f"{nota_sc}{escala}" if nota_sc != "N/A" else "Sin nota"
         lines.append(f"\n  {m['titulo']}")
         lines.append(f"  {'─' * 40}")
-        if nota_imdb != "N/A":
-            lines.append(f"  Nota IMDB: {nota_str}")
+        if nota_sc != "N/A":
+            lines.append(f"  Nota SensaCine: {nota_str}")
         if m.get("nota_ecartelera"):
             lines.append(f"  Nota eCartelera: {m['nota_ecartelera']}")
-        if m.get("genero_imdb"):
-            lines.append(f"  Genero: {m['genero_imdb']}")
+        if m.get("genero_sensacine"):
+            lines.append(f"  Genero: {m['genero_sensacine']}")
         elif m.get("genero"):
             lines.append(f"  Genero: {m['genero']}")
         if m.get("director"):
@@ -320,8 +325,8 @@ def format_cartelera_text(movies):
 
         if m.get("ecartelera_url"):
             lines.append(f"  eCartelera: {m['ecartelera_url']}")
-        if m.get("imdb_url"):
-            lines.append(f"  IMDB: {m['imdb_url']}")
+        if m.get("sensacine_url"):
+            lines.append(f"  SensaCine: {m['sensacine_url']}")
 
     lines.append(f"\n{'=' * 55}")
     lines.append(f"  Total: {len(movies)} peliculas")
@@ -334,22 +339,23 @@ def format_cartelera_telegram(movies):
     lines = ["<b>🎬 CARTELERA DE CINE - MADRID</b>\n"]
 
     for m in movies:
-        nota_imdb = m.get("nota_imdb", "N/A")
-        nota_str = f"{nota_imdb}/10" if nota_imdb != "N/A" else "Sin nota"
+        nota_sc = m.get("nota_sensacine", "N/A")
+        escala = m.get("nota_escala", "/5")
+        nota_str = f"{nota_sc}{escala}" if nota_sc != "N/A" else "Sin nota"
         title = m["titulo"]
 
         lines.append(f"<b>{title}</b>")
-        lines.append(f"⭐ Nota IMDB: {nota_str}")
-        if m.get("genero_imdb"):
-            lines.append(f"🎭 {m['genero_imdb']}")
+        lines.append(f"⭐ Nota SensaCine: {nota_str}")
+        if m.get("genero_sensacine"):
+            lines.append(f"🎭 {m['genero_sensacine']}")
         if m.get("director"):
             lines.append(f"🎬 Dir: {m['director']}")
 
         links = []
         if m.get("ecartelera_url"):
             links.append(f'<a href="{m["ecartelera_url"]}">Ficha eCartelera</a>')
-        if m.get("imdb_url"):
-            links.append(f'<a href="{m["imdb_url"]}">Ficha IMDb</a>')
+        if m.get("sensacine_url"):
+            links.append(f'<a href="{m["sensacine_url"]}">Ficha SensaCine</a>')
         if links:
             lines.append("🔗 " + " | ".join(links))
 
@@ -386,8 +392,8 @@ def main():
         help="Formato de salida",
     )
     parser.add_argument(
-        "--no-imdb", action="store_true",
-        help="No enriquecer con datos de IMDB (mas rapido)",
+        "--no-sensacine", "--no-imdb", dest="no_sensacine", action="store_true",
+        help="No enriquecer con datos de SensaCine (mas rapido)",
     )
 
     args = parser.parse_args()
@@ -396,9 +402,9 @@ def main():
     movies = get_cartelera_madrid()
     print(f"  {len(movies)} peliculas encontradas", file=sys.stderr)
 
-    if not args.no_imdb:
-        print("Enriqueciendo con datos de IMDB...", file=sys.stderr)
-        movies = enrich_with_imdb(movies)
+    if not args.no_sensacine:
+        print("Enriqueciendo con datos de SensaCine...", file=sys.stderr)
+        movies = enrich_with_sensacine(movies)
 
     if args.filtrar:
         profile = load_user_profile()
@@ -406,9 +412,9 @@ def main():
         movies = filter_by_profile(movies, profile)
         print(f"  {len(movies)} peliculas tras filtro", file=sys.stderr)
 
-    # Ordenar por nota IMDB descendente
+    # Ordenar por nota SensaCine descendente
     def sort_key(m):
-        nota = m.get("nota_imdb", "N/A")
+        nota = m.get("nota_sensacine", "N/A")
         return float(nota) if nota != "N/A" else 0
     movies.sort(key=sort_key, reverse=True)
 

@@ -20,7 +20,7 @@ import config
 from movie_scraper import get_movie_info
 from cartelera_scraper import (
     get_cartelera_madrid,
-    enrich_with_imdb,
+    enrich_with_sensacine,
     filter_by_profile,
     load_user_profile,
 )
@@ -64,14 +64,14 @@ def api_pelicula(nombre):
 def cartelera():
     filtrar = request.args.get("filtrar", "false") == "true"
     movies = get_cartelera_madrid()
-    movies = enrich_with_imdb(movies)
+    movies = enrich_with_sensacine(movies)
 
     if filtrar:
         profile = load_user_profile()
         movies = filter_by_profile(movies, profile)
 
     def sort_key(m):
-        nota = m.get("nota_imdb", "N/A")
+        nota = m.get("nota_sensacine", "N/A")
         return float(nota) if nota != "N/A" else 0
     movies.sort(key=sort_key, reverse=True)
 
@@ -87,14 +87,14 @@ def cartelera():
 def api_cartelera():
     """API REST para obtener la cartelera."""
     movies = get_cartelera_madrid()
-    movies = enrich_with_imdb(movies)
+    movies = enrich_with_sensacine(movies)
 
     for m in movies:
         if "cines" in m and isinstance(m["cines"], dict):
             m["cines"] = {k: list(v) for k, v in m["cines"].items()}
 
     def sort_key(m):
-        nota = m.get("nota_imdb", "N/A")
+        nota = m.get("nota_sensacine", "N/A")
         return float(nota) if nota != "N/A" else 0
     movies.sort(key=sort_key, reverse=True)
 
