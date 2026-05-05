@@ -4,133 +4,7 @@
       "invocationName": "agente de peliculas",
       "intents": [
         {
-          "name": "GetRatingIntent",
-          "slots": [
-            {
-              "name": "movie",
-              "type": "AMAZON.Movie"
-            }
-          ],
-          "samples": [
-            "cual es la nota de {movie}",
-            "que nota tiene {movie}",
-            "puntuacion de {movie}",
-            "que puntuacion tiene {movie}",
-            "como esta valorada {movie}",
-            "valoracion de {movie}",
-            "rating de {movie}",
-            "nota de {movie}",
-            "cuanto tiene {movie} en IMDB"
-          ]
-        },
-        {
-          "name": "GetDirectorIntent",
-          "slots": [
-            {
-              "name": "movie",
-              "type": "AMAZON.Movie"
-            }
-          ],
-          "samples": [
-            "quien dirigio {movie}",
-            "quien es el director de {movie}",
-            "director de {movie}",
-            "quien hizo {movie}",
-            "de quien es {movie}",
-            "quien dirige {movie}",
-            "que director tiene {movie}"
-          ]
-        },
-        {
-          "name": "GetDurationIntent",
-          "slots": [
-            {
-              "name": "movie",
-              "type": "AMAZON.Movie"
-            }
-          ],
-          "samples": [
-            "cuanto dura {movie}",
-            "que duracion tiene {movie}",
-            "duracion de {movie}",
-            "cuanto tiempo dura {movie}",
-            "cuantas horas dura {movie}",
-            "cuantos minutos dura {movie}",
-            "lo que dura {movie}"
-          ]
-        },
-        {
-          "name": "GetSynopsisIntent",
-          "slots": [
-            {
-              "name": "movie",
-              "type": "AMAZON.Movie"
-            }
-          ],
-          "samples": [
-            "de que va {movie}",
-            "de que trata {movie}",
-            "sinopsis de {movie}",
-            "argumento de {movie}",
-            "cual es la trama de {movie}",
-            "cuentame de que va {movie}",
-            "sobre que trata {movie}",
-            "resumen de {movie}"
-          ]
-        },
-        {
-          "name": "GetVotesIntent",
-          "slots": [
-            {
-              "name": "movie",
-              "type": "AMAZON.Movie"
-            }
-          ],
-          "samples": [
-            "cuantos votos tiene {movie}",
-            "numero de votos de {movie}",
-            "votos de {movie}",
-            "cuanta gente ha votado {movie}",
-            "cuantas valoraciones tiene {movie}"
-          ]
-        },
-        {
-          "name": "GetGenreIntent",
-          "slots": [
-            {
-              "name": "movie",
-              "type": "AMAZON.Movie"
-            }
-          ],
-          "samples": [
-            "que genero es {movie}",
-            "de que genero es {movie}",
-            "genero de {movie}",
-            "que tipo de pelicula es {movie}",
-            "a que genero pertenece {movie}"
-          ]
-        },
-        {
-          "name": "GetAllInfoIntent",
-          "slots": [
-            {
-              "name": "movie",
-              "type": "AMAZON.Movie"
-            }
-          ],
-          "samples": [
-            "dime todo sobre {movie}",
-            "informacion de {movie}",
-            "cuentame sobre {movie}",
-            "todo sobre {movie}",
-            "que sabes de {movie}",
-            "dame informacion de {movie}",
-            "ficha de {movie}",
-            "dime los datos de {movie}"
-          ]
-        },
-        {
-          "name": "AMAZON.HelpIntent",
+          "name": "AMAZON.CancelIntent",
           "samples": []
         },
         {
@@ -138,12 +12,30 @@
           "samples": []
         },
         {
-          "name": "AMAZON.CancelIntent",
+          "name": "AMAZON.HelpIntent",
           "samples": []
         },
         {
-          "name": "AMAZON.FallbackIntent",
-          "samples": []
+          "name": "GetMovieIntent",
+          "slots": [
+            {
+              "name": "Movie",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "dame informacion de {Movie}",
+            "que tal es {Movie}",
+            "cual es la nota de {Movie}",
+            "quien dirige {Movie}"
+          ]
+        },
+        {
+          "name": "ConcertsIntent",
+          "samples": [
+            "que conciertos hay esta semana",
+            "dame los conciertos favoritos"
+          ]
         }
       ]
     }

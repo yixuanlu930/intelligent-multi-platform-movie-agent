@@ -4,7 +4,7 @@ PRODID:-//Agente Peliculas//ES
 CALSCALE:GREGORIAN
 BEGIN:VEVENT
 UID:9f669e7dca9b115561b9903cc7f36ca3@agente-peliculas
-DTSTAMP:20260505T093732Z
+DTSTAMP:20260505T104058Z
 DTSTART:20260507T210000
 DTEND:20260507T230000
 SUMMARY:Concierto de Eric Clapton en Madrid
@@ -14,7 +14,7 @@ URL:https://www.wegow.com/es/conciertos/concierto-de-eric-clapton-en-madrid-movi
 END:VEVENT
 BEGIN:VEVENT
 UID:92f75f8e5ef69c4988797ccee1b8810e@agente-peliculas
-DTSTAMP:20260505T093732Z
+DTSTAMP:20260505T104058Z
 DTSTART:20260508T203000
 DTEND:20260508T223000
 SUMMARY:Concierto de Fito & Fitipaldis en Madrid
@@ -24,7 +24,7 @@ URL:https://www.wegow.com/es/conciertos/concierto-de-fito-fitipaldis-en-madrid-m
 END:VEVENT
 BEGIN:VEVENT
 UID:639d338b3d0d5025ed713f3d48f6f332@agente-peliculas
-DTSTAMP:20260505T093732Z
+DTSTAMP:20260505T104058Z
 DTSTART:20260508T210000
 DTEND:20260508T230000
 SUMMARY:Concierto de Sanguijuelas del Guadiana en Madrid
@@ -34,7 +34,7 @@ URL:https://www.wegow.com/es/conciertos/concierto-de-sanguijuelas-del-guadiana-e
 END:VEVENT
 BEGIN:VEVENT
 UID:accea0a453a5577a5eb9ae7b3ee20dfc@agente-peliculas
-DTSTAMP:20260505T093732Z
+DTSTAMP:20260505T104058Z
 DTSTART:20260508T210000
 DTEND:20260508T230000
 SUMMARY:Concierto de Guasones en Madrid
@@ -44,7 +44,7 @@ URL:https://www.wegow.com/es/conciertos/concierto-de-guasones-en-madrid-sala-vil
 END:VEVENT
 BEGIN:VEVENT
 UID:7a53eec47f9e432bad5bd51a62ba362f@agente-peliculas
-DTSTAMP:20260505T093732Z
+DTSTAMP:20260505T104058Z
 DTSTART:20260509T193000
 DTEND:20260509T213000
 SUMMARY:CELTIAN EN MADRID FIN DE GIRA
@@ -54,7 +54,7 @@ URL:https://www.wegow.com/es/conciertos/celtian-en-madrid-fin-de-gira
 END:VEVENT
 BEGIN:VEVENT
 UID:cae34ea733b5de2b64fe82e75c3683e1@agente-peliculas
-DTSTAMP:20260505T093732Z
+DTSTAMP:20260505T104058Z
 DTSTART:20260509T203000
 DTEND:20260509T223000
 SUMMARY:Concierto de Fito & Fitipaldis en Madrid
@@ -64,7 +64,7 @@ URL:https://www.wegow.com/es/conciertos/concierto-de-fito-fitipaldis-en-madrid-m
 END:VEVENT
 BEGIN:VEVENT
 UID:c537b3a6ae73388cb81dad69b7a33c47@agente-peliculas
-DTSTAMP:20260505T093732Z
+DTSTAMP:20260505T104058Z
 DTSTART:20260512T193000
 DTEND:20260512T213000
 SUMMARY:Concierto de Orquesta Clásica Santa Cecilia en Madrid

@@ -18,7 +18,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Guardrail de entrada\nconst prompt = ($input.first().json.body && $input.first().json.body.prompt) || '';\nconst blocked = [\n  /ignore (all|previous) instructions/i,\n  /system prompt/i,\n  /jailbreak/i,\n  /\\b\\d{16}\\b/, // numero de tarjeta\n  /\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}\\b/i, // email\n];\nfor (const re of blocked) {\n  if (re.test(prompt)) {\n    return [{ json: { allowed: false, reason: 'prompt rechazado por guardrail de entrada', original: prompt } }];\n  }\n}\nreturn [{ json: { allowed: true, prompt } }];"
+        "jsCode": "const prompt = ($input.first().json.body && $input.first().json.body.prompt) || '';\nconst blocked = [/ignore (all|previous) instructions/i,/system prompt/i,/jailbreak/i,/\\b\\d{16}\\b/];\nfor (const re of blocked) { if (re.test(prompt)) return [{json:{allowed:false,reason:'guardrail entrada',prompt}}]; }\nreturn [{json:{allowed:true,prompt}}];"
       },
       "id": "2",
       "name": "Validate Input",
@@ -57,7 +57,7 @@
           "values": [
             {
               "role": "system",
-              "content": "Eres un asistente experto. Responde de forma educada y veraz."
+              "content": "Eres un asistente experto."
             },
             {
               "role": "user",
@@ -77,7 +77,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Guardrail de salida\nconst out = ($input.first().json.message && $input.first().json.message.content) || '';\nconst banned = [/idiota/i, /imbecil/i, /matar/i, /suicid/i];\nfor (const re of banned) {\n  if (re.test(out)) {\n    return [{ json: { safe: false, sanitized: '[respuesta bloqueada por guardrail de salida]' } }];\n  }\n}\nreturn [{ json: { safe: true, sanitized: out } }];"
+        "jsCode": "const out = ($input.first().json.message && $input.first().json.message.content) || '';\nconst banned = [/idiota/i,/imbecil/i,/matar/i,/suicid/i];\nfor (const re of banned) { if (re.test(out)) return [{json:{safe:false,sanitized:'[bloqueado salida]'}}]; }\nreturn [{json:{safe:true,sanitized:out}}];"
       },
       "id": "5",
       "name": "Validate Output",
@@ -183,6 +183,5 @@
   },
   "active": false,
   "settings": {},
-  "versionId": "",
   "id": "llm-guardrail"
 }
