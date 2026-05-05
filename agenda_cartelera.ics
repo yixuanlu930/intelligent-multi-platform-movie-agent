@@ -1,0 +1,41 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Agente Peliculas//ES
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:5aebc6283622338ef806780170d76f36@agente-peliculas
+DTSTAMP:20260505T093732Z
+DTSTART:20260505T210000
+DTEND:20260505T230000
+SUMMARY:Cine: El diablo viste de Prada 2
+DESCRIPTION:Director: David Frankel\nNota: 4.1\n\nCientos de chicas desean con todas sus fuerzas trabajar como asistente personal de Miranda Priestly\, la directora de una importantísima revista de moda. Es una de la mujeres mas populares de Nueva York y su opinión determina lo que está de moda y lo que no. Considerada un genio del glamour y de los negocios\, tiene tanto poder que incluso los grandes diseñadores la veneran. Sin emabrgo\, una joven que no se deja influir por modas superficiales\, terminará consiguiendo el deseado puesto.Comedia dirigida por David Frankel y protagonizada por las actrices Meryl Streep y Anne Hathaway
+LOCATION:
+END:VEVENT
+BEGIN:VEVENT
+UID:9a24f705517a4ee4b1a345b2a75421cf@agente-peliculas
+DTSTAMP:20260505T093732Z
+DTSTART:20260505T210000
+DTEND:20260505T230000
+SUMMARY:Cine: Proyecto Salvación
+DESCRIPTION:Director: Phil Lord\, Christopher Miller\nNota: 4.0\n\nUn astronauta solitario (Ryan Gosling) despierta de un coma y se da cuenta de que está a millones de kilómetros de su hogar. En el diminuto vehículo en el que vuelve en sí\, también hay dos miembros de la tripulación muertos. El astronauta no recuerda ni su misión ni su nombre. Sin embargo\, pronto descubre que es la única esperanza para la supervivencia de la humanidad.
+LOCATION:
+END:VEVENT
+BEGIN:VEVENT
+UID:df3d813b30351a45664eebe7fb61433c@agente-peliculas
+DTSTAMP:20260505T093732Z
+DTSTART:20260505T210000
+DTEND:20260505T230000
+SUMMARY:Cine: Super Mario Galaxy: La película
+DESCRIPTION:Director: Aaron Horvath\, Michael Jelenic\nNota: 3.6\n\nTras asentarse en el Reino Champiñón y empezar por fin a encontrar su lugar\, Mario y Luigi disfrutan de una aparente calma que pronto se ve interrumpida. Una enigmática llamada de auxilio irrumpe desde los rincones más olvidados del reino\, señalando directamente a un pasado que la Princesa Peach ha mantenido en secreto durante años. Lo que comienza como una misión de rescate pronto se transforma en algo mucho más grande y peligroso de lo que cualquiera de ellos podría haber imaginado. Obligados a abandonar la seguridad de su hogar\, Mario\, Luigi y sus inseparables aliados se embarcan en una aventura que los llevará más allá de los límites conocidos\, atravesando mundos desconocidos\, galaxias lejanas y escenarios tan fascinantes como impredecibles. En su camino\, se cruzarán con nuevos personajes —algunos dispuestos a ayudar\, otros con intenciones más oscuras— que pondrán a prueba su valentía\, su lealtad y su capacidad para trabajar en equipo. Mientras los misterios del pasado de Peach comienzan a desvelarse\, el grupo descubrirá que la amenaza a la que se enfrentan no solo pone en riesgo el Reino Champiñón\, sino el equilibrio de múltiples mundos. Entre desafíos épicos\, decisiones difíciles y momentos de humor y camaradería\, Mario y Luigi deberán demostrar una vez más que incluso los héroes más improbables pueden marcar la diferencia cuando todo está en juego.
+LOCATION:
+END:VEVENT
+BEGIN:VEVENT
+UID:ce114399aff356241775023335178ec8@agente-peliculas
+DTSTAMP:20260505T093732Z
+DTSTART:20260505T210000
+DTEND:20260505T230000
+SUMMARY:Cine: Amarga Navidad
+DESCRIPTION:Director: Pedro Almodóvar\nNota: 2.2\n\nElsa es una directora de publicidad\, cuya madre fallece durante un puente en el mes de diciembre. Para sobrellevar el duelo\, Elsa se centra plenamente en el trabajo\, sin dejar tiempo para superarlo\, intentando huir hacia delante. Sin embargo\, una crisis de pánico la obliga a parar y tener que descansar.Bonifacio\, su pareja\, había sido su salvación y la había ayudado a sobrellevar el fallecimiento. Pero para pasar página\, Elsa decide irse a Lanzarote con su amiga Patricia\, que también necesita un descanso de Madrid\, mientras que Bonifacio se queda en la capital.
+LOCATION:
+END:VEVENT
+END:VCALENDAR

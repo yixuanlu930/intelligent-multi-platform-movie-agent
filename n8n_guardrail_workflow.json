@@ -1,0 +1,188 @@
+{
+  "name": "LLM Guardrail",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "llm-guardrail",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Webhook In",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Guardrail de entrada\nconst prompt = ($input.first().json.body && $input.first().json.body.prompt) || '';\nconst blocked = [\n  /ignore (all|previous) instructions/i,\n  /system prompt/i,\n  /jailbreak/i,\n  /\\b\\d{16}\\b/, // numero de tarjeta\n  /\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}\\b/i, // email\n];\nfor (const re of blocked) {\n  if (re.test(prompt)) {\n    return [{ json: { allowed: false, reason: 'prompt rechazado por guardrail de entrada', original: prompt } }];\n  }\n}\nreturn [{ json: { allowed: true, prompt } }];"
+      },
+      "id": "2",
+      "name": "Validate Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.allowed}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "3",
+      "name": "If Input Allowed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "model": "gpt-4o-mini",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "Eres un asistente experto. Responde de forma educada y veraz."
+            },
+            {
+              "role": "user",
+              "content": "={{$json.prompt}}"
+            }
+          ]
+        }
+      },
+      "id": "4",
+      "name": "OpenAI LLM",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        900,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Guardrail de salida\nconst out = ($input.first().json.message && $input.first().json.message.content) || '';\nconst banned = [/idiota/i, /imbecil/i, /matar/i, /suicid/i];\nfor (const re of banned) {\n  if (re.test(out)) {\n    return [{ json: { safe: false, sanitized: '[respuesta bloqueada por guardrail de salida]' } }];\n  }\n}\nreturn [{ json: { safe: true, sanitized: out } }];"
+      },
+      "id": "5",
+      "name": "Validate Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {ok: $json.safe, response: $json.sanitized} }}"
+      },
+      "id": "6",
+      "name": "Respond Ok",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {ok: false, reason: $json.reason} }}"
+      },
+      "id": "7",
+      "name": "Respond Blocked",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        900,
+        420
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook In": {
+      "main": [
+        [
+          {
+            "node": "Validate Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Input": {
+      "main": [
+        [
+          {
+            "node": "If Input Allowed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Input Allowed": {
+      "main": [
+        [
+          {
+            "node": "OpenAI LLM",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Blocked",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI LLM": {
+      "main": [
+        [
+          {
+            "node": "Validate Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Output": {
+      "main": [
+        [
+          {
+            "node": "Respond Ok",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "",
+  "id": "llm-guardrail"
+}
