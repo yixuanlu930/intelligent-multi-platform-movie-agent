@@ -4,12 +4,12 @@ Editar las variables segun tu entorno.
 """
 
 # --- Telegram ---
-TELEGRAM_BOT_TOKEN = "8681004744:AAH-t0sPHD5Zr_2lMXpoKIYNXzE7n5U7YAY"  # Obtener de @BotFather en Telegram
-TELEGRAM_CHAT_ID = "6451572961"  # Chat ID para envio automatico de cartelera
+TELEGRAM_BOT_TOKEN = "8779113481:AAF6owcUwL12lz001WwrDSaN-xwKdDV--oc"  # Obtener de @BotFather en Telegram
+TELEGRAM_CHAT_ID = "6393563933"  # Chat ID para envio automatico de cartelera
 
 # --- LLM Open Source (Ollama) ---
-OLLAMA_URL = "http://localhost:11434"
-OLLAMA_MODEL = "qwen2.5:3b"  # Modelo a usar: qwen2.5:3b (2GB RAM, buena calidad)
+OLLAMA_URL = "http://172.17.240.1:11434"
+OLLAMA_MODEL = "qwen2.5:1.5b"  # Modelo a usar: qwen2.5:1.5b (2GB RAM, buena calidad)
 
 # --- Alternativa: Groq API (LLM en la nube, gratis) ---
 GROQ_API_KEY = ""  # Obtener en console.groq.com (gratis)
