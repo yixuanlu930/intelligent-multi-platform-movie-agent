@@ -1,0 +1,222 @@
+#!/usr/bin/env python3
+"""
+Cliente Python para lanzar el workflow de Ace Step contra ComfyUI vía su API.
+
+ComfyUI expone un endpoint HTTP `/prompt` que acepta workflows en
+"API format" (que es exactamente lo que hay en `acestep_workflow.json`).
+También expone un WebSocket por el que avisa cuando la generación termina.
+
+Uso:
+
+    # Genera con los valores por defecto del workflow:
+    python generar_cancion.py
+
+    # Cambia el prompt y la letra:
+    python generar_cancion.py \\
+        --tags "synthwave, retro, 120 bpm, neon, dreamy" \\
+        --lyrics-file mi_letra.txt
+
+    # Genera el instrumental:
+    python generar_cancion.py --workflow acestep_workflow_instrumental.json
+
+    # Cambia la semilla y la duración:
+    python generar_cancion.py --seed 7 --seconds 45
+
+Requisitos:
+    pip install requests websocket-client
+    ComfyUI corriendo en http://localhost:8188 con el nodo Ace Step instalado.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import logging
+import sys
+import time
+import urllib.parse
+import urllib.request
+import uuid
+from pathlib import Path
+
+import requests
+
+try:
+    import websocket  # websocket-client
+except ImportError:
+    websocket = None  # solo necesario en modo --wait
+
+logging.basicConfig(format="%(asctime)s [%(levelname)s] %(message)s",
+                    level=logging.INFO)
+log = logging.getLogger("acestep")
+
+DEFAULT_SERVER = "127.0.0.1:8188"
+
+
+def cargar_workflow(ruta: Path) -> dict:
+    return json.loads(ruta.read_text(encoding="utf-8"))
+
+
+def aplicar_overrides(
+    workflow: dict, *,
+    tags: str | None,
+    lyrics: str | None,
+    seed: int | None,
+    seconds: int | None,
+    steps: int | None,
+) -> None:
+    """Modifica el workflow in-place con los valores que pasa el usuario.
+
+    Los nodos están identificados por su class_type (no por su id, que puede
+    cambiar si alguien reordena el workflow).
+    """
+    for node in workflow.values():
+        ct = node.get("class_type")
+        if ct == "TextEncodeAceStepAudio" and node["inputs"].get("lyrics_strength", 0) > 0:
+            # Es el prompt positivo (negative tiene lyrics_strength=0 normalmente)
+            if tags is not None:
+                node["inputs"]["tags"] = tags
+            if lyrics is not None:
+                node["inputs"]["lyrics"] = lyrics
+        elif ct == "KSampler" and seed is not None:
+            node["inputs"]["seed"] = seed
+        elif ct == "KSampler" and steps is not None:
+            node["inputs"]["steps"] = steps
+        elif ct == "EmptyAceStepLatentAudio" and seconds is not None:
+            node["inputs"]["seconds"] = seconds
+
+
+def encolar(workflow: dict, server: str, client_id: str) -> str:
+    """Envía el workflow a ComfyUI. Devuelve el prompt_id."""
+    url = f"http://{server}/prompt"
+    payload = {"prompt": workflow, "client_id": client_id}
+    r = requests.post(url, json=payload, timeout=30)
+    r.raise_for_status()
+    data = r.json()
+    if "error" in data:
+        raise RuntimeError(f"ComfyUI rechazó el workflow: {data['error']}")
+    return data["prompt_id"]
+
+
+def esperar_finalizacion(server: str, client_id: str, prompt_id: str,
+                         timeout: int = 600) -> dict:
+    """Se conecta al WebSocket de ComfyUI y espera al evento `executing` con
+    `node == null`, que indica fin de la ejecución. Devuelve el history."""
+    if websocket is None:
+        raise SystemExit(
+            "Instala 'websocket-client' para usar --wait: pip install websocket-client"
+        )
+
+    ws_url = f"ws://{server}/ws?clientId={client_id}"
+    ws = websocket.create_connection(ws_url, timeout=10)
+    log.info("Conectado al WebSocket de ComfyUI.")
+    inicio = time.time()
+    try:
+        while True:
+            if time.time() - inicio > timeout:
+                raise TimeoutError("Timeout esperando a ComfyUI.")
+            mensaje = ws.recv()
+            if not isinstance(mensaje, str):
+                continue
+            evt = json.loads(mensaje)
+            if evt.get("type") == "executing":
+                data = evt.get("data", {})
+                if (
+                    data.get("prompt_id") == prompt_id
+                    and data.get("node") is None
+                ):
+                    log.info("Generación terminada.")
+                    break
+    finally:
+        ws.close()
+
+    history_url = f"http://{server}/history/{prompt_id}"
+    r = requests.get(history_url, timeout=15)
+    r.raise_for_status()
+    return r.json().get(prompt_id, {})
+
+
+def descargar_audio(server: str, history: dict, destino: Path) -> Path | None:
+    """Busca un archivo de salida de tipo audio en el history y lo descarga."""
+    outputs = history.get("outputs", {})
+    for node_outputs in outputs.values():
+        for clave, items in node_outputs.items():
+            if clave not in ("audio", "audios"):
+                continue
+            for item in items:
+                qs = urllib.parse.urlencode({
+                    "filename": item["filename"],
+                    "subfolder": item.get("subfolder", ""),
+                    "type":      item.get("type", "output"),
+                })
+                url = f"http://{server}/view?{qs}"
+                destino.parent.mkdir(parents=True, exist_ok=True)
+                with urllib.request.urlopen(url) as src, open(destino, "wb") as dst:
+                    dst.write(src.read())
+                return destino
+    return None
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Genera una canción con Ace Step vía ComfyUI.")
+    parser.add_argument("--server", default=DEFAULT_SERVER,
+                        help="host:puerto donde corre ComfyUI (default: 127.0.0.1:8188).")
+    parser.add_argument("--workflow", "-w", type=Path,
+                        default=Path(__file__).with_name("acestep_workflow.json"),
+                        help="Ruta al workflow JSON.")
+    parser.add_argument("--tags",    help="Sobrescribe los tags de estilo musical.")
+    parser.add_argument("--lyrics",  help="Sobrescribe la letra (string).")
+    parser.add_argument("--lyrics-file", type=Path,
+                        help="Lee la letra desde un fichero.")
+    parser.add_argument("--seed",    type=int, help="Semilla del sampler.")
+    parser.add_argument("--seconds", type=int, help="Duración del audio.")
+    parser.add_argument("--steps",   type=int, help="Pasos del sampler.")
+    parser.add_argument("--wait", action="store_true",
+                        help="Espera a que ComfyUI termine y descarga el audio.")
+    parser.add_argument("--output", "-o", type=Path, default=Path("cancion_generada.flac"),
+                        help="Ruta donde descargar el audio (solo con --wait).")
+    args = parser.parse_args()
+
+    workflow = cargar_workflow(args.workflow)
+    lyrics = args.lyrics
+    if args.lyrics_file:
+        lyrics = args.lyrics_file.read_text(encoding="utf-8")
+
+    aplicar_overrides(
+        workflow,
+        tags=args.tags,
+        lyrics=lyrics,
+        seed=args.seed,
+        seconds=args.seconds,
+        steps=args.steps,
+    )
+
+    client_id = uuid.uuid4().hex
+    log.info("Enviando workflow a %s …", args.server)
+    try:
+        prompt_id = encolar(workflow, args.server, client_id)
+    except (requests.RequestException, RuntimeError) as e:
+        log.error("Error encolando: %s", e)
+        return 1
+    log.info("Encolado con prompt_id=%s", prompt_id)
+
+    if not args.wait:
+        log.info("Workflow en cola. Lánzalo con --wait para descargar el audio.")
+        return 0
+
+    try:
+        history = esperar_finalizacion(args.server, client_id, prompt_id)
+    except (TimeoutError, OSError) as e:
+        log.error("Esperando ComfyUI: %s", e)
+        return 1
+
+    ruta = descargar_audio(args.server, history, args.output)
+    if ruta:
+        log.info("Audio descargado en %s", ruta)
+        return 0
+    log.error("No se ha encontrado audio en el history del prompt.")
+    return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

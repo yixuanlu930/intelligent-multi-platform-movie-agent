@@ -1,0 +1,69 @@
+{
+  "3": {
+    "class_type": "CheckpointLoaderSimple",
+    "inputs": {
+      "ckpt_name": "ace_step_v1_3.5b.safetensors"
+    },
+    "_meta": { "title": "Cargar modelo Ace Step v1 (3.5B)" }
+  },
+  "4": {
+    "class_type": "EmptyAceStepLatentAudio",
+    "inputs": {
+      "seconds": 30,
+      "batch_size": 1
+    },
+    "_meta": { "title": "Latente vacío (30s)" }
+  },
+  "5": {
+    "class_type": "TextEncodeAceStepAudio",
+    "inputs": {
+      "clip": ["3", 1],
+      "tags": "rock instrumental, distorted electric guitar, drums, bass, 130 bpm, energetic, driving rhythm, no vocals",
+      "lyrics": "",
+      "lyrics_strength": 0.0
+    },
+    "_meta": { "title": "Prompt positivo (solo tags, sin letra)" }
+  },
+  "6": {
+    "class_type": "TextEncodeAceStepAudio",
+    "inputs": {
+      "clip": ["3", 1],
+      "tags": "vocals, singing, lyrics, voice, low quality, hum, noise",
+      "lyrics": "",
+      "lyrics_strength": 0.0
+    },
+    "_meta": { "title": "Prompt negativo (excluye voces)" }
+  },
+  "7": {
+    "class_type": "KSampler",
+    "inputs": {
+      "model": ["3", 0],
+      "positive": ["5", 0],
+      "negative": ["6", 0],
+      "latent_image": ["4", 0],
+      "seed": 1234,
+      "steps": 60,
+      "cfg": 6.0,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 1.0
+    },
+    "_meta": { "title": "Sampler (60 steps, CFG 6)" }
+  },
+  "8": {
+    "class_type": "VAEDecodeAudio",
+    "inputs": {
+      "samples": ["7", 0],
+      "vae": ["3", 2]
+    },
+    "_meta": { "title": "Decodificar audio (VAE)" }
+  },
+  "9": {
+    "class_type": "SaveAudio",
+    "inputs": {
+      "audio": ["8", 0],
+      "filename_prefix": "ace_step_instrumental"
+    },
+    "_meta": { "title": "Guardar instrumental" }
+  }
+}

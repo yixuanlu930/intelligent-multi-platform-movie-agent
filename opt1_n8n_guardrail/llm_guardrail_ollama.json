@@ -1,0 +1,160 @@
+{
+  "name": "LLM Guardrail (Ollama)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "llm-guardrail",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-webhook",
+      "name": "Webhook In",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// === GUARDARRAÍL DE ENTRADA ===\n// Bloquea: prompt injection, contenido prohibido y PII obvia.\n\nconst body = $input.first().json.body || $input.first().json;\nconst prompt = (body.prompt || '').toString();\n\nif (!prompt.trim()) {\n  return [{ json: { allowed: false, categoria: 'vacio', reason: 'prompt vacío', prompt: '' } }];\n}\nif (prompt.length > 4000) {\n  return [{ json: { allowed: false, categoria: 'longitud', reason: 'prompt demasiado largo (>4000)', prompt } }];\n}\n\nconst INJECTION = [\n  /ignore (all|previous|prior) instructions/i,\n  /disregard (all|previous|the) (system|earlier)/i,\n  /act as (a |an )?(dan|jailbreak|admin)/i,\n  /system prompt/i,\n  /reveal (your|the) (system|hidden|secret) (prompt|instructions)/i,\n  /\\bjailbreak\\b/i,\n  /\\bDAN\\b/,\n  /pretend (you are|to be)/i,\n  /ignora (todas )?(las )?instrucciones (anteriores|previas)/i,\n  /olvida (todas )?(las )?instrucciones/i\n];\n\nconst PROHIBIDO = [\n  /how (to|do i) (make|build|create|synthesize) (a |an )?(bomb|explosive|weapon)/i,\n  /child (porn|abuse|sexual)/i,\n  /\\bcsam\\b/i,\n  /(buy|sell|acquire) (drugs|cocaine|heroin|meth)/i,\n  /c[oó]mo (hacer|fabricar|construir) (una |un )?bomba/i\n];\n\nconst PII = [\n  /\\b\\d{16}\\b/,\n  /\\b\\d{8}[a-z]\\b/i,\n  /\\bcvv\\s*:?\\s*\\d{3,4}\\b/i\n];\n\nfor (const re of INJECTION) {\n  if (re.test(prompt)) {\n    return [{ json: { allowed: false, categoria: 'prompt_injection', reason: 'prompt injection detectado', prompt } }];\n  }\n}\nfor (const re of PROHIBIDO) {\n  if (re.test(prompt)) {\n    return [{ json: { allowed: false, categoria: 'contenido_prohibido', reason: 'tema prohibido', prompt } }];\n  }\n}\nfor (const re of PII) {\n  if (re.test(prompt)) {\n    return [{ json: { allowed: false, categoria: 'pii', reason: 'PII en el prompt', prompt } }];\n  }\n}\n\nreturn [{ json: { allowed: true, prompt } }];"
+      },
+      "id": "node-validate-input",
+      "name": "Validate Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            {
+              "leftValue": "={{$json.allowed}}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "node-if-input",
+      "name": "If Input Allowed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:11434/api/chat",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: 'qwen2.5:3b',\n  stream: false,\n  options: { temperature: 0.3, num_predict: 600 },\n  messages: [\n    { role: 'system', content: 'Eres un asistente útil, conciso y respetuoso. Responde en español salvo que te pregunten en otro idioma. No respondes a preguntas que impliquen daño físico, ilegalidad, contenido sexual con menores, autolesiones o información personal de terceros.' },\n    { role: 'user', content: $json.prompt }\n  ]\n}) }}",
+        "options": {
+          "timeout": 60000,
+          "response": { "response": { "responseFormat": "json" } }
+        }
+      },
+      "id": "node-llm",
+      "name": "Ollama LLM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [880, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// === GUARDARRAÍL DE SALIDA ===\n// Lee la respuesta del LLM (Ollama / DeepSeek / OpenAI) y la bloquea o\n// sanitiza si contiene contenido inapropiado.\n\nconst data = $input.first().json;\n\n// Soporta varias formas posibles de respuesta:\n//   Ollama:    { message: { content: '...' } }\n//   OpenAI:    { choices: [{ message: { content: '...' }}] }\n//   Otros:     { response: '...' } o { text: '...' }\nlet texto = '';\nif (data.message && data.message.content) {\n  texto = data.message.content;\n} else if (data.choices && data.choices[0] && data.choices[0].message) {\n  texto = data.choices[0].message.content;\n} else if (typeof data.response === 'string') {\n  texto = data.response;\n} else if (typeof data.text === 'string') {\n  texto = data.text;\n}\n\nif (!texto) {\n  return [{ json: { safe: false, categoria: 'sin_respuesta', reason: 'el LLM no devolvió texto', sanitized: 'No se pudo generar respuesta.' } }];\n}\n\nconst BANEADO = [\n  /\\b(idiota|imbécil|imbecil|estúpido|estupido|gilipollas)\\b/i,\n  /\\b(suicidarse|suicidio|matarse|autolesion)/i,\n  /\\bmatar\\s+a\\s+/i\n];\n\nfor (const re of BANEADO) {\n  if (re.test(texto)) {\n    return [{ json: {\n      safe: false,\n      categoria: 'salida_inapropiada',\n      reason: 'la respuesta del modelo contiene contenido bloqueado',\n      sanitized: 'No puedo proporcionar esa respuesta.'\n    }}];\n  }\n}\n\nreturn [{ json: { safe: true, sanitized: texto } }];"
+      },
+      "id": "node-validate-output",
+      "name": "Validate Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            {
+              "leftValue": "={{$json.safe}}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "node-if-output",
+      "name": "If Output Safe",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1320, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, response: $json.sanitized } }}"
+      },
+      "id": "node-respond-ok",
+      "name": "Respond Ok",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1560, 100]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "options": { "responseCode": 200 },
+        "responseBody": "={{ { ok: false, blocked_by: 'output_guardrail', categoria: $json.categoria, reason: $json.reason, sanitized: $json.sanitized } }}"
+      },
+      "id": "node-respond-output-blocked",
+      "name": "Respond Output Blocked",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "options": { "responseCode": 400 },
+        "responseBody": "={{ { ok: false, blocked_by: 'input_guardrail', categoria: $json.categoria, reason: $json.reason } }}"
+      },
+      "id": "node-respond-input-blocked",
+      "name": "Respond Input Blocked",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [880, 440]
+    }
+  ],
+  "connections": {
+    "Webhook In": {
+      "main": [[{ "node": "Validate Input", "type": "main", "index": 0 }]]
+    },
+    "Validate Input": {
+      "main": [[{ "node": "If Input Allowed", "type": "main", "index": 0 }]]
+    },
+    "If Input Allowed": {
+      "main": [
+        [{ "node": "Ollama LLM", "type": "main", "index": 0 }],
+        [{ "node": "Respond Input Blocked", "type": "main", "index": 0 }]
+      ]
+    },
+    "Ollama LLM": {
+      "main": [[{ "node": "Validate Output", "type": "main", "index": 0 }]]
+    },
+    "Validate Output": {
+      "main": [[{ "node": "If Output Safe", "type": "main", "index": 0 }]]
+    },
+    "If Output Safe": {
+      "main": [
+        [{ "node": "Respond Ok", "type": "main", "index": 0 }],
+        [{ "node": "Respond Output Blocked", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "id": "llm-guardrail-ollama"
+}
