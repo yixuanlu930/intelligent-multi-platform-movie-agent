@@ -1,0 +1,280 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "cine inteligente",
+      "intents": [
+
+        {
+          "name": "GetRatingIntent",
+          "slots": [
+            { "name": "pelicula", "type": "TITULO_PELICULA" }
+          ],
+          "samples": [
+            "cual es la nota de {pelicula}",
+            "qué nota tiene {pelicula}",
+            "qué puntuación tiene {pelicula}",
+            "dime la nota de {pelicula}",
+            "dime la calificación de {pelicula}",
+            "cuánto vale {pelicula} en IMDB",
+            "nota de {pelicula}",
+            "está bien valorada {pelicula}",
+            "calificación de {pelicula}",
+            "qué puntuación tiene {pelicula} en IMDB",
+            "está bien puntuada {pelicula}"
+          ]
+        },
+
+        {
+          "name": "GetVotesIntent",
+          "slots": [
+            { "name": "pelicula", "type": "TITULO_PELICULA" }
+          ],
+          "samples": [
+            "cuántos votos tiene {pelicula}",
+            "cuánta gente ha votado {pelicula}",
+            "votos de {pelicula}",
+            "es popular {pelicula}",
+            "número de votos de {pelicula}",
+            "cuántas valoraciones tiene {pelicula}",
+            "popularidad de {pelicula}"
+          ]
+        },
+
+        {
+          "name": "GetSynopsisIntent",
+          "slots": [
+            { "name": "pelicula", "type": "TITULO_PELICULA" }
+          ],
+          "samples": [
+            "de qué trata {pelicula}",
+            "cuéntame la sinopsis de {pelicula}",
+            "cuál es el argumento de {pelicula}",
+            "dime de qué va {pelicula}",
+            "resumen de {pelicula}",
+            "qué pasa en {pelicula}",
+            "sinopsis de {pelicula}",
+            "sobre qué trata {pelicula}",
+            "cuéntame el argumento de {pelicula}",
+            "de qué va la película {pelicula}"
+          ]
+        },
+
+        {
+          "name": "GetDirectorIntent",
+          "slots": [
+            { "name": "pelicula", "type": "TITULO_PELICULA" }
+          ],
+          "samples": [
+            "quién dirigió {pelicula}",
+            "quién es el director de {pelicula}",
+            "director de {pelicula}",
+            "quién ha dirigido {pelicula}",
+            "quién está detrás de la cámara en {pelicula}",
+            "quién realizó {pelicula}",
+            "dirección de {pelicula}",
+            "quién es el realizador de {pelicula}"
+          ]
+        },
+
+        {
+          "name": "GetDurationIntent",
+          "slots": [
+            { "name": "pelicula", "type": "TITULO_PELICULA" }
+          ],
+          "samples": [
+            "cuánto dura {pelicula}",
+            "cuál es la duración de {pelicula}",
+            "duración de {pelicula}",
+            "cuántos minutos tiene {pelicula}",
+            "es larga {pelicula}",
+            "cuánto tiempo dura {pelicula}",
+            "minutos de {pelicula}",
+            "cuántas horas dura {pelicula}"
+          ]
+        },
+
+        {
+          "name": "GetGenreIntent",
+          "slots": [
+            { "name": "pelicula", "type": "TITULO_PELICULA" }
+          ],
+          "samples": [
+            "de qué género es {pelicula}",
+            "qué tipo de película es {pelicula}",
+            "género de {pelicula}",
+            "es de terror {pelicula}",
+            "{pelicula} es una comedia",
+            "qué géneros tiene {pelicula}",
+            "géneros de {pelicula}",
+            "{pelicula} es de ciencia ficción"
+          ]
+        },
+
+        {
+          "name": "GetAllInfoIntent",
+          "slots": [
+            { "name": "pelicula", "type": "TITULO_PELICULA" }
+          ],
+          "samples": [
+            "dime todo sobre {pelicula}",
+            "qué sabes de {pelicula}",
+            "información completa de {pelicula}",
+            "cuéntame sobre {pelicula}",
+            "datos de {pelicula}",
+            "ficha de {pelicula}",
+            "dame toda la información de {pelicula}",
+            "qué me puedes decir de {pelicula}",
+            "busca {pelicula}",
+            "información de {pelicula}"
+          ]
+        },
+
+        {
+          "name": "SetMovieIntent",
+          "slots": [
+            { "name": "pelicula", "type": "TITULO_PELICULA" }
+          ],
+          "samples": [
+            "quiero preguntar por {pelicula}",
+            "la película es {pelicula}",
+            "pon {pelicula}",
+            "selecciona {pelicula}",
+            "busca la película {pelicula}",
+            "quiero saber sobre {pelicula}"
+          ]
+        },
+
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.FallbackIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NavigateHomeIntent",
+          "samples": []
+        }
+      ],
+      "types": [
+        {
+          "name": "TITULO_PELICULA",
+          "values": [
+            { "name": { "value": "El Padrino"                         } },
+            { "name": { "value": "El Padrino 2"                       } },
+            { "name": { "value": "2001 Odisea en el Espacio"          } },
+            { "name": { "value": "Interstellar"                       } },
+            { "name": { "value": "Matrix"                             } },
+            { "name": { "value": "El Señor de los Anillos"            } },
+            { "name": { "value": "El Señor de los Anillos La Comunidad del Anillo" } },
+            { "name": { "value": "Pulp Fiction"                       } },
+            { "name": { "value": "El Club de la Lucha"                } },
+            { "name": { "value": "Forrest Gump"                       } },
+            { "name": { "value": "Titanic"                            } },
+            { "name": { "value": "Joker"                              } },
+            { "name": { "value": "Origen"                             } },
+            { "name": { "value": "Oppenheimer"                        } },
+            { "name": { "value": "Avatar"                             } },
+            { "name": { "value": "Star Wars"                          } },
+            { "name": { "value": "Parásitos"                          } },
+            { "name": { "value": "Toy Story"                          } },
+            { "name": { "value": "Coco"                               } },
+            { "name": { "value": "El Rey León"                        } },
+            { "name": { "value": "La Lista de Schindler"              } },
+            { "name": { "value": "Braveheart"                         } },
+            { "name": { "value": "Gladiator"                          } },
+            { "name": { "value": "Gladiator 2"                        } },
+            { "name": { "value": "Batman El Caballero Oscuro"         } },
+            { "name": { "value": "El Caballero Oscuro"                } },
+            { "name": { "value": "Barbie"                             } },
+            { "name": { "value": "Dune"                               } },
+            { "name": { "value": "Dune Parte Dos"                     } },
+            { "name": { "value": "Poor Things"                        } }
+          ]
+        }
+      ]
+    },
+    "dialog": {
+      "intents": [
+        {
+          "name": "GetRatingIntent",
+          "delegationStrategy": "ALWAYS",
+          "slots": [
+            {
+              "name": "pelicula",
+              "type": "TITULO_PELICULA",
+              "elicitationRequired": true,
+              "confirmationRequired": false,
+              "prompts": {
+                "elicitation": "Elicit.Slot.GetRatingIntent.pelicula"
+              }
+            }
+          ]
+        },
+        {
+          "name": "GetSynopsisIntent",
+          "delegationStrategy": "ALWAYS",
+          "slots": [
+            {
+              "name": "pelicula",
+              "type": "TITULO_PELICULA",
+              "elicitationRequired": true,
+              "confirmationRequired": false,
+              "prompts": {
+                "elicitation": "Elicit.Slot.GetSynopsisIntent.pelicula"
+              }
+            }
+          ]
+        },
+        {
+          "name": "GetDirectorIntent",
+          "delegationStrategy": "ALWAYS",
+          "slots": [
+            {
+              "name": "pelicula",
+              "type": "TITULO_PELICULA",
+              "elicitationRequired": true,
+              "confirmationRequired": false,
+              "prompts": {
+                "elicitation": "Elicit.Slot.GetDirectorIntent.pelicula"
+              }
+            }
+          ]
+        }
+      ],
+      "delegationStrategy": "SKILL_RESPONSE"
+    },
+    "prompts": [
+      {
+        "id": "Elicit.Slot.GetRatingIntent.pelicula",
+        "variations": [
+          { "type": "PlainText", "value": "De qué película quieres saber la nota" },
+          { "type": "PlainText", "value": "Cuál es el título de la película" }
+        ]
+      },
+      {
+        "id": "Elicit.Slot.GetSynopsisIntent.pelicula",
+        "variations": [
+          { "type": "PlainText", "value": "De qué película quieres la sinopsis" },
+          { "type": "PlainText", "value": "Cuál es el título de la película" }
+        ]
+      },
+      {
+        "id": "Elicit.Slot.GetDirectorIntent.pelicula",
+        "variations": [
+          { "type": "PlainText", "value": "De qué película quieres saber el director" },
+          { "type": "PlainText", "value": "Cuál es el título de la película" }
+        ]
+      }
+    ]
+  }
+}
