@@ -29,3 +29,4 @@ alexa_skill_def.zip
 
 # Variantes locales de workflows (URLs patcheadas para Docker, etc.)
 *_docker.json
+.DS_Store
