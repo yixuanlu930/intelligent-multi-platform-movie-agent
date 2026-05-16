@@ -24,9 +24,15 @@ from dataclasses import dataclass  # Azúcar sintáctico: nos ahorra escribir __
 import requests   # La librería que usamos para hacer las peticiones HTTP al webhook de N8N
 
 
-# URL por defecto del webhook en producción (la que registra ejecuciones en N8N)
-# Si N8N corre en otro sitio, se puede sobreescribir con --url
-DEFAULT_URL = "http://localhost:5678/webhook/llm-guardrail"
+# URL por defecto del webhook en producción (la que registra ejecuciones en N8N).
+# Si N8N corre en otro sitio, se puede sobreescribir con --url.
+#
+# IMPORTANTE: n8n >= 2.x cambió el formato de URL.
+# - n8n 1.x:  /webhook/{path}
+# - n8n 2.x:  /webhook/{workflowId}/{nodeNameUrlEncoded}/{path}
+# El nodo del workflow se llama "Webhook In" (con espacio), por eso aparece
+# `webhook%2520in` (el %20 del espacio queda doblemente codificado en la URL).
+DEFAULT_URL = "http://localhost:5678/webhook/llm-guardrail-ollama/webhook%2520in/llm-guardrail"
 
 
 # Dataclass que representa un caso de prueba individual
