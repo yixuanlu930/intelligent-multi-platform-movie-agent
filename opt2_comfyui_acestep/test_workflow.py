@@ -1,13 +1,12 @@
 """
 Tests del workflow Ace Step y del cliente Python.
 
-No requieren tener ComfyUI corriendo. Solo validan:
-  - que los JSON tienen la estructura esperada
+No requieren tener ComfyUI corriendo. Validan:
+  - que los JSON tienen TODOS los nodos críticos del workflow oficial
+    (faltar cualquiera de ellos provoca que el modelo NO genere voces)
   - que `aplicar_overrides` modifica los nodos correctos
 
     python -m pytest test_workflow.py -v
-
-Resultado esperado al ejecutar: 8 tests pasados.
 """
 
 import json
@@ -15,10 +14,8 @@ from pathlib import Path
 
 import pytest
 
-# Importa las dos funciones publicas del cliente que se van a probar.
 from generar_cancion import cargar_workflow, aplicar_overrides
 
-# Directorio raiz de la practica (donde viven los JSON).
 AQUI = Path(__file__).parent
 
 
@@ -31,22 +28,17 @@ AQUI = Path(__file__).parent
     "acestep_workflow_instrumental.json",
 ])
 def test_workflow_tiene_nodos_minimos(nombre):
-    """Comprueba que cada workflow contiene todos los tipos de nodo obligatorios.
-
-    ComfyUI necesita exactamente estos nodos para generar audio con Ace Step:
-    - CheckpointLoaderSimple: carga el modelo ace_step_v1_3.5b.safetensors.
-    - EmptyAceStepLatentAudio: crea el espacio latente de audio vacio.
-    - TextEncodeAceStepAudio: codifica el prompt textual (x2: positivo y negativo).
-    - KSampler: aplica el proceso de difusion para generar el latente.
-    - VAEDecodeAudio: decodifica el latente a audio en formato de onda.
-    - SaveAudio: guarda el resultado como .flac en la carpeta output de ComfyUI.
-    """
+    """Comprueba que están todos los nodos del workflow oficial."""
     wf = cargar_workflow(AQUI / nombre)
     tipos = {node["class_type"] for node in wf.values()}
     obligatorios = {
         "CheckpointLoaderSimple",
+        "ModelSamplingSD3",                # crítico para Ace Step
+        "LatentOperationTonemapReinhard",  # control de voces
+        "LatentApplyOperationCFG",         # aplica el tonemap
         "EmptyAceStepLatentAudio",
         "TextEncodeAceStepAudio",
+        "ConditioningZeroOut",             # genera el negativo
         "KSampler",
         "VAEDecodeAudio",
         "SaveAudio",
@@ -55,20 +47,35 @@ def test_workflow_tiene_nodos_minimos(nombre):
     assert not faltan, f"Faltan nodos en {nombre}: {faltan}"
 
 
-@pytest.mark.parametrize("nombre", [
-    "acestep_workflow.json",
-    "acestep_workflow_instrumental.json",
-])
-def test_workflow_tiene_dos_text_encoders(nombre):
-    """Necesitamos uno positivo y uno negativo.
+def test_workflow_cancion_tiene_lyrics_y_voces():
+    """El workflow de canción debe pedir voces y tener letra."""
+    wf = cargar_workflow(AQUI / "acestep_workflow.json")
+    encoder = next(n for n in wf.values() if n["class_type"] == "TextEncodeAceStepAudio")
+    assert encoder["inputs"]["lyrics"].strip(), "Hay que pasar una letra"
+    assert encoder["inputs"]["lyrics_strength"] > 0.5, (
+        "lyrics_strength debe ser alto para que el modelo cante la letra"
+    )
+    tags = encoder["inputs"]["tags"].lower()
+    assert "vocal" in tags or "voice" in tags, (
+        "Los tags deben pedir explícitamente vocal/voice"
+    )
 
-    Ace Step requiere dos TextEncodeAceStepAudio:
-    - Positivo: describe el estilo musical y la letra que se quiere generar.
-    - Negativo: describe lo que se quiere evitar (p.ej. voces en el instrumental).
-    """
-    wf = cargar_workflow(AQUI / nombre)
-    encoders = [n for n in wf.values() if n["class_type"] == "TextEncodeAceStepAudio"]
-    assert len(encoders) == 2
+
+def test_workflow_instrumental_sin_letra():
+    wf = cargar_workflow(AQUI / "acestep_workflow_instrumental.json")
+    encoder = next(n for n in wf.values() if n["class_type"] == "TextEncodeAceStepAudio")
+    assert encoder["inputs"]["lyrics"] == "", "Instrumental: sin letra"
+    assert encoder["inputs"]["lyrics_strength"] == 0.0
+    tags = encoder["inputs"]["tags"].lower()
+    assert "no vocal" in tags or "instrumental" in tags
+
+
+def test_model_sampling_sd3_shift_correcto():
+    """Ace Step necesita shift=5 en ModelSamplingSD3 (valor del workflow oficial)."""
+    for nombre in ["acestep_workflow.json", "acestep_workflow_instrumental.json"]:
+        wf = cargar_workflow(AQUI / nombre)
+        ms = next(n for n in wf.values() if n["class_type"] == "ModelSamplingSD3")
+        assert ms["inputs"]["shift"] == 5.0, f"{nombre}: shift debe ser 5.0"
 
 
 # ---------------------------------------------------------------------------
@@ -76,62 +83,30 @@ def test_workflow_tiene_dos_text_encoders(nombre):
 # ---------------------------------------------------------------------------
 
 def test_override_tags_y_seed():
-    """Verifica que aplicar_overrides modifica tags en el encoder positivo y seed en KSampler.
-
-    El encoder positivo es el que esta conectado a la entrada 'positive' del KSampler.
-    El encoder negativo no debe modificarse aunque cambiemos los tags.
-    """
     wf = cargar_workflow(AQUI / "acestep_workflow.json")
     aplicar_overrides(
-        wf, tags="jazz, slow, sax", lyrics=None,
+        wf, tags="jazz, slow, sax, male vocal", lyrics=None,
         seed=777, seconds=None, steps=None,
     )
 
-    # El sampler recibió la nueva semilla.
     sampler = next(n for n in wf.values() if n["class_type"] == "KSampler")
     assert sampler["inputs"]["seed"] == 777
 
-    # El text encoder positivo (lyrics_strength > 0) recibió los nuevos tags.
-    # El instrumental tiene lyrics_strength=0, por lo que aqui se comprueba el de cancion.
-    positivos = [
-        n for n in wf.values()
-        if n["class_type"] == "TextEncodeAceStepAudio"
-        and n["inputs"]["lyrics_strength"] > 0
-    ]
-    assert any(n["inputs"]["tags"] == "jazz, slow, sax" for n in positivos)
+    encoder = next(n for n in wf.values() if n["class_type"] == "TextEncodeAceStepAudio")
+    assert encoder["inputs"]["tags"] == "jazz, slow, sax, male vocal"
 
 
-def test_override_lyrics_no_modifica_negative():
-    """Verifica que el encoder negativo no se toca cuando se cambian las lyrics.
-
-    El nodo negativo describe lo que el modelo debe evitar generar.
-    Cambiar la letra no debe afectarle en absoluto.
-    """
+def test_override_lyrics():
     wf = cargar_workflow(AQUI / "acestep_workflow.json")
-    # Guarda el estado inicial de los encoders negativos (lyrics_strength == 0).
-    negatives_antes = [
-        dict(n["inputs"]) for n in wf.values()
-        if n["class_type"] == "TextEncodeAceStepAudio"
-        and n["inputs"]["lyrics_strength"] == 0
-    ]
     aplicar_overrides(
-        wf, tags=None, lyrics="nueva letra",
+        wf, tags=None, lyrics="[verse]\nNueva letra que canta el modelo\n",
         seed=None, seconds=None, steps=None,
     )
-    # Comprueba que los negativos no cambiaron nada.
-    negatives_despues = [
-        dict(n["inputs"]) for n in wf.values()
-        if n["class_type"] == "TextEncodeAceStepAudio"
-        and n["inputs"]["lyrics_strength"] == 0
-    ]
-    assert negatives_antes == negatives_despues
+    encoder = next(n for n in wf.values() if n["class_type"] == "TextEncodeAceStepAudio")
+    assert "Nueva letra" in encoder["inputs"]["lyrics"]
 
 
 def test_override_seconds():
-    """Verifica que la duracion se modifica correctamente en EmptyAceStepLatentAudio.
-
-    'seconds' controla cuantos segundos de audio va a generar el modelo.
-    """
     wf = cargar_workflow(AQUI / "acestep_workflow.json")
     aplicar_overrides(
         wf, tags=None, lyrics=None,
@@ -142,14 +117,19 @@ def test_override_seconds():
     assert latente["inputs"]["seconds"] == 45
 
 
-def test_workflow_es_json_valido():
-    """Garantía mínima: el workflow modificado sigue siendo JSON serializable.
+def test_override_steps():
+    wf = cargar_workflow(AQUI / "acestep_workflow.json")
+    aplicar_overrides(
+        wf, tags=None, lyrics=None,
+        seed=None, seconds=None, steps=80,
+    )
+    sampler = next(n for n in wf.values() if n["class_type"] == "KSampler")
+    assert sampler["inputs"]["steps"] == 80
 
-    Despues de aplicar todos los overrides, el diccionario debe poder
-    convertirse a JSON sin errores para poder enviarse a la API de ComfyUI.
-    """
+
+def test_workflow_es_json_valido_tras_overrides():
     wf = cargar_workflow(AQUI / "acestep_workflow.json")
     aplicar_overrides(
         wf, tags="x", lyrics="y", seed=1, seconds=10, steps=10,
     )
-    json.dumps(wf)  # no debe lanzar excepcion
+    json.dumps(wf)  # no debe lanzar

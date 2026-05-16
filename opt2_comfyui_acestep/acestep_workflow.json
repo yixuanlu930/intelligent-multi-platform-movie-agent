@@ -1,68 +1,88 @@
 {
-  "3": {
+  "40": {
     "class_type": "CheckpointLoaderSimple",
     "inputs": {
       "ckpt_name": "ace_step_v1_3.5b.safetensors"
     },
     "_meta": { "title": "Cargar modelo Ace Step v1 (3.5B)" }
   },
-  "4": {
+  "51": {
+    "class_type": "ModelSamplingSD3",
+    "inputs": {
+      "model": ["40", 0],
+      "shift": 5.0
+    },
+    "_meta": { "title": "Model Sampling (shift=5, requerido para Ace Step)" }
+  },
+  "50": {
+    "class_type": "LatentOperationTonemapReinhard",
+    "inputs": {
+      "multiplier": 1.0
+    },
+    "_meta": { "title": "Tonemap Reinhard (volumen de voces; sube para voces más prominentes)" }
+  },
+  "49": {
+    "class_type": "LatentApplyOperationCFG",
+    "inputs": {
+      "model": ["51", 0],
+      "operation": ["50", 0]
+    },
+    "_meta": { "title": "Aplicar tonemap al CFG" }
+  },
+  "14": {
+    "class_type": "TextEncodeAceStepAudio",
+    "inputs": {
+      "clip": ["40", 1],
+      "tags": "indie pop, female vocal, dreamy, lo-fi, 110 bpm, warm guitar, synth pad, reverb, melancholic, clear vocals",
+      "lyrics": "[verse]\nWalking through the city lights tonight\nEvery corner tells a different story\nNeon signs reflected in the rain\nI keep moving though I don't know why\n\n[chorus]\nWe are the ones who never sleep\nChasing dreams across the streets\nHolding on to every breath\nLiving fast before we rest\n\n[verse]\nMemories scattered in the wind\nLike pages of an open book\nI close my eyes and start again\nWith every road another look\n\n[chorus]\nWe are the ones who never sleep\nChasing dreams across the streets\nHolding on to every breath\nLiving fast before we rest\n",
+      "lyrics_strength": 0.99
+    },
+    "_meta": { "title": "Prompt positivo (tags + letra)" }
+  },
+  "44": {
+    "class_type": "ConditioningZeroOut",
+    "inputs": {
+      "conditioning": ["14", 0]
+    },
+    "_meta": { "title": "Negativo (positivo zeroreado)" }
+  },
+  "17": {
     "class_type": "EmptyAceStepLatentAudio",
     "inputs": {
-      "seconds": 60,
+      "seconds": 120,
       "batch_size": 1
     },
-    "_meta": { "title": "Latente vacío (60s de audio)" }
+    "_meta": { "title": "Latente vacío (120s de audio)" }
   },
-  "5": {
-    "class_type": "TextEncodeAceStepAudio",
-    "inputs": {
-      "clip": ["3", 1],
-      "tags": "indie pop, dreamy, female vocal, lo-fi, 110 bpm, warm guitar, synth pad, reverb, melancholic",
-      "lyrics": "[verse]\nWalking through the city lights tonight\nEvery corner tells a different story\nNeon signs reflected in the rain\nI keep moving though I don't know why\n\n[chorus]\nWe are the ones who never sleep\nChasing dreams across the streets\nHolding on to every breath\nLiving fast before we rest\n\n[verse]\nMemories scattered in the wind\nLike pages of an open book\nI close my eyes and start again\nWith every road another look\n\n[chorus]\nWe are the ones who never sleep\nChasing dreams across the streets\nHolding on to every breath\nLiving fast before we rest\n",
-      "lyrics_strength": 1.0
-    },
-    "_meta": { "title": "Prompt positivo (estilo + letra)" }
-  },
-  "6": {
-    "class_type": "TextEncodeAceStepAudio",
-    "inputs": {
-      "clip": ["3", 1],
-      "tags": "silence, low quality, distorted, harsh, screaming, atonal",
-      "lyrics": "",
-      "lyrics_strength": 1.0
-    },
-    "_meta": { "title": "Prompt negativo" }
-  },
-  "7": {
+  "52": {
     "class_type": "KSampler",
     "inputs": {
-      "model": ["3", 0],
-      "positive": ["5", 0],
-      "negative": ["6", 0],
-      "latent_image": ["4", 0],
+      "model": ["49", 0],
+      "positive": ["14", 0],
+      "negative": ["44", 0],
+      "latent_image": ["17", 0],
       "seed": 42,
       "steps": 50,
-      "cfg": 5.0,
+      "cfg": 5,
       "sampler_name": "euler",
       "scheduler": "simple",
       "denoise": 1.0
     },
-    "_meta": { "title": "Sampler (50 steps, CFG 5)" }
+    "_meta": { "title": "Sampler (50 steps, CFG 5, euler/simple)" }
   },
-  "8": {
+  "18": {
     "class_type": "VAEDecodeAudio",
     "inputs": {
-      "samples": ["7", 0],
-      "vae": ["3", 2]
+      "samples": ["52", 0],
+      "vae": ["40", 2]
     },
     "_meta": { "title": "Decodificar audio (VAE)" }
   },
-  "9": {
+  "60": {
     "class_type": "SaveAudio",
     "inputs": {
-      "audio": ["8", 0],
-      "filename_prefix": "ace_step_song"
+      "audio": ["18", 0],
+      "filename_prefix": "audio/ace_step_song"
     },
     "_meta": { "title": "Guardar como .flac" }
   }
