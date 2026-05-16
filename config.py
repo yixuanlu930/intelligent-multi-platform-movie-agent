@@ -4,11 +4,11 @@ Editar las variables segun tu entorno.
 """
 
 # --- Telegram ---
-TELEGRAM_BOT_TOKEN = "8779113481:AAF6owcUwL12lz001WwrDSaN-xwKdDV--oc"  # Obtener de @BotFather en Telegram
-TELEGRAM_CHAT_ID = "6393563933"  # Chat ID para envio automatico de cartelera
+TELEGRAM_BOT_TOKEN = "8694955615:AAFIRgVXjdnIUbKx9qjwHy-iyViH91psl4w"  # Obtener de @BotFather en Telegram
+TELEGRAM_CHAT_ID = "8007981357"  # Chat ID para envio automatico de cartelera
 
 # --- LLM Open Source (Ollama) ---
-OLLAMA_URL = "http://172.17.240.1:11434"
+OLLAMA_URL = "http://172.17.240.1:11434" # http://localhost:11434 si Ollama se ejecuta en la misma máquina
 OLLAMA_MODEL = "qwen2.5:1.5b"  # Modelo a usar: qwen2.5:1.5b (2GB RAM, buena calidad)
 
 # --- Alternativa: Groq API (LLM en la nube, gratis) ---
@@ -32,6 +32,6 @@ CACHE_FILE = "movie_cache.json"
 USER_PROFILE_FILE = "user_profile.json"
 
 # --- Web App ---
-FLASK_HOST = "0.0.0.0"
+FLASK_HOST = "0.0.0.0" 
 FLASK_PORT = 5000
 FLASK_DEBUG = True
