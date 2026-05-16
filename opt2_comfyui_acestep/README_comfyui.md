@@ -13,46 +13,6 @@ Cumple la opcional del **Bloque II**:
 
 ---
 
-## Como funciona Ace Step (importante)
-
-Ace Step **no inventa letras** — es un modelo de difusion para audio que recibe dos entradas y produce un fichero de audio:
-
-1. **Tags de estilo** (`"indie pop, female vocal, dreamy, 110 bpm"`): describen el genero, instrumentos, tempo y caracter de la cancion.
-2. **Lyrics** (texto con marcadores `[verse]` y `[chorus]`): es la letra que el modelo "canta" en ese estilo.
-
-Por tanto, si quieres una cancion cantada con una letra concreta:
-- O bien **escribes la letra a mano** (lo que se hizo aqui, ver `letra_ejemplo.txt`).
-- O bien la **generas previamente con un LLM** (por ejemplo Ollama con `qwen2.5:1.5b` o cualquier otro), pasandole un prompt tipo *"Escribe una letra con verso y estribillo sobre el otono en Madrid, maximo 16 lineas, formato [verse] [chorus]"*, y luego se la pasas al workflow.
-
-El workflow `acestep_workflow_instrumental.json` esta hecho a proposito para que **no haya voz** (lyrics vacios + tags negativos contra cualquier voz). Por eso los `smoke_test*.flac` adjuntos son musica sin canto: demuestran que el pipeline ejecuta de extremo a extremo, no son la cancion final del enunciado.
-
----
-
-## Requisitos minimos (importante antes de ejecutar)
-
-Ace Step es un modelo grande. El fichero del modelo (`ace_step_v1_3.5b.safetensors`, version "all in one" repackaged para ComfyUI por **Comfy-Org/ACE-Step_ComfyUI_repackaged**) **pesa 7,7 GB** y se carga entero en memoria al inicializarse:
-
-| Recurso | Minimo recomendado | Razon |
-|---|---|---|
-| Disco libre | 10 GB | Modelo (7.7 GB) + cache de ComfyUI + audios generados |
-| RAM (CPU) | **9 GB libres** | 7.7 GB del modelo + ~1.5 GB de PyTorch + overhead de ComfyUI |
-| VRAM (GPU) | 8 GB | Si tienes GPU NVIDIA con CUDA: muchisimo mas rapido (~1 min/cancion en vez de 20-40 min) |
-| Tiempo por cancion | 1 min con GPU, 20-40 min con CPU | Difusion sobre latentes de audio |
-
-**Si tu maquina tiene menos de 9 GB de RAM libre, el modelo no cabra y ComfyUI petara con OOM o entrara en swap brutal.** En ese caso, las alternativas son:
-
-1. **HuggingFace Space gratuito** — usa la GPU de HuggingFace, sin instalar nada: https://huggingface.co/spaces/ACE-Step/ACE-Step
-2. **Replicate o fal.ai** — API de pago barata (~0.01 EUR por cancion).
-3. **Maquina con mas RAM o con GPU** — alquila una en Google Colab (gratis con T4), Paperspace o cualquier proveedor cloud.
-
-El modelo se descarga de:
-```
-https://huggingface.co/Comfy-Org/ACE-Step_ComfyUI_repackaged/resolve/main/all_in_one/ace_step_v1_3.5b.safetensors
-```
-y se coloca en `ComfyUI/models/checkpoints/`.
-
----
-
 ## Estado final probado
 
 La practica se ha probado correctamente en local con ComfyUI en:
