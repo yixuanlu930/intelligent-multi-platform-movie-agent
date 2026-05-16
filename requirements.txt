@@ -5,5 +5,7 @@ flask>=3.0.0
 python-telegram-bot>=21.0
 ask-sdk-core>=1.19.0
 ollama>=0.4.0
-playwright
-chromium
+langchain>=0.3.0
+langchain-ollama>=0.2.0
+# Opcional: si usas Playwright para algun scraper alternativo,
+# instalalo con `pip install playwright && playwright install chromium`.
