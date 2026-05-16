@@ -26,3 +26,6 @@ secrets.yaml
 # Artefactos pesados que no van al repo
 alexa_skill/lambda_package.zip
 alexa_skill_def.zip
+
+# Variantes locales de workflows (URLs patcheadas para Docker, etc.)
+*_docker.json
