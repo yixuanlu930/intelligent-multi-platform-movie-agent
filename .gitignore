@@ -3,13 +3,26 @@ __pycache__/
 *.pyo
 .claude/
 venv/
+.venv/
 *.egg-info/
 movie_cache.json
 cartelera_cron.log
-*.pdf:Zone.Identifier
-# 🔐 Configuración con secretos y credenciales
+
+# Basura del SO / editor
+.DS_Store
+**/.DS_Store
+.history/
+**/.history/
+*:Zone.Identifier
+Thumbs.db
+
+# 🔐 Configuracion con secretos y credenciales
 config.py
 config.json
 .env
 config_local.py
 secrets.yaml
+
+# Artefactos pesados que no van al repo
+alexa_skill/lambda_package.zip
+alexa_skill_def.zip

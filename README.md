@@ -386,7 +386,7 @@ El modelo de 3B ofrece el mejor equilibrio calidad/rendimiento para el hardware 
 
 ```bash
 curl -fsSL https://ollama.ai/install.sh | sh   # Instalar Ollama
-ollama pull qwen2.5:3b                          # Descargar modelo
+ollama pull qwen2.5:1.5b                          # Descargar modelo
 ```
 
 ---
@@ -400,7 +400,7 @@ Toda la configuracion esta centralizada en un unico fichero:
 | `TELEGRAM_BOT_TOKEN` | Token del bot (de @BotFather) | `"TU_TOKEN_AQUI"` |
 | `TELEGRAM_CHAT_ID` | Chat ID para envio automatico | `""` |
 | `OLLAMA_URL` | URL del servidor Ollama | `"http://localhost:11434"` |
-| `OLLAMA_MODEL` | Modelo LLM | `"qwen2.5:3b"` |
+| `OLLAMA_MODEL` | Modelo LLM | `"qwen2.5:1.5b"` |
 | `CACHE_FILE` | Fichero de cache de peliculas | `"movie_cache.json"` |
 | `USER_PROFILE_FILE` | Fichero de perfil de usuario | `"user_profile.json"` |
 | `FLASK_HOST` | Host de la app web | `"0.0.0.0"` |
@@ -428,7 +428,7 @@ pip install -r requirements.txt
 
 ```bash
 curl -fsSL https://ollama.ai/install.sh | sh
-ollama pull qwen2.5:3b
+ollama pull qwen2.5:1.5b
 ```
 
 ### Paso 4: Probar el scraper

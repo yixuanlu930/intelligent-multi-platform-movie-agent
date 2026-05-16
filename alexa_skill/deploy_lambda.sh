@@ -8,7 +8,7 @@
 # Por eso instalamos todo en una carpeta local (lambda_build/) y la comprimimos.
 #
 # Uso:
-#   cd alexa_skill_def
+#   cd alexa_skill
 #   bash deploy_lambda.sh
 #
 # Tras ejecutarlo, sube lambda_package.zip a:

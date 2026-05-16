@@ -4,8 +4,8 @@ Editar las variables segun tu entorno.
 """
 
 # --- Telegram ---
-TELEGRAM_BOT_TOKEN = "8694955615:AAFIRgVXjdnIUbKx9qjwHy-iyViH91psl4w"  # Obtener de @BotFather en Telegram
-TELEGRAM_CHAT_ID = "8007981357"  # Chat ID para envio automatico de cartelera
+TELEGRAM_BOT_TOKEN = "TU_TOKEN_AQUI"  # Obtener de @BotFather en Telegram
+TELEGRAM_CHAT_ID = "TU_CHAT_ID_AQUI"  # Chat ID para envio automatico de cartelera
 
 # --- LLM Open Source (Ollama) ---
 OLLAMA_URL = "http://172.17.240.1:11434" # http://localhost:11434 si Ollama se ejecuta en la misma máquina
