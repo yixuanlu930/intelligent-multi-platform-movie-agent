@@ -41,14 +41,14 @@ Los datos se obtienen de la API de **OMDb** y se cachean para evitar consultas r
 ## Archivos del proyecto
 
 ```text
-alexa_skill_def/
+alexa_skill/
 ├── lambda_function.py       # Código principal de la Lambda de Alexa
 ├── imdb_scraper.py          # Cliente de OMDb API y ejecutable por terminal
 ├── cache.py                 # Caché en memoria y DynamoDB opcional
 ├── requirements.txt         # Dependencias Python fijadas
 ├── interactionModel.json    # Modelo de interacción de Alexa en español
 ├── deploy_lambda.sh         # Genera lambda_package.zip
-└── README.md                # Este archivo
+└── README_ALEXA.md          # Este archivo
 ```
 
 ---
@@ -107,7 +107,7 @@ El plan gratuito de OMDb permite realizar consultas suficientes para la práctic
 
 El archivo `imdb_scraper.py` cumple el requisito de poder ejecutarse directamente desde terminal.
 
-Desde la carpeta `alexa_skill_def/`:
+Desde la carpeta `alexa_skill/`:
 
 ```bash
 python3 -m venv venv
@@ -149,7 +149,7 @@ Ejemplo de salida para `Inception`:
 
 ## Crear el ZIP de Lambda
 
-Desde la carpeta `alexa_skill_def/`:
+Desde la carpeta `alexa_skill/`:
 
 ```bash
 python3 -m venv venv

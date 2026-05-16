@@ -50,7 +50,7 @@
         "url": "http://localhost:11434/api/chat",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({\n  model: 'qwen2.5:3b',\n  stream: false,\n  options: { temperature: 0.3, num_predict: 600 },\n  messages: [\n    { role: 'system', content: 'Eres un asistente útil, conciso y respetuoso. Responde en español salvo que te pregunten en otro idioma. No respondes a preguntas que impliquen daño físico, ilegalidad, contenido sexual con menores, autolesiones o información personal de terceros.' },\n    { role: 'user', content: $json.prompt }\n  ]\n}) }}",
+        "jsonBody": "={{ JSON.stringify({\n  model: 'qwen2.5:1.5b',\n  stream: false,\n  options: { temperature: 0.3, num_predict: 600 },\n  messages: [\n    { role: 'system', content: 'Eres un asistente útil, conciso y respetuoso. Responde en español salvo que te pregunten en otro idioma. No respondes a preguntas que impliquen daño físico, ilegalidad, contenido sexual con menores, autolesiones o información personal de terceros.' },\n    { role: 'user', content: $json.prompt }\n  ]\n}) }}",
         "options": {
           "timeout": 60000,
           "response": { "response": { "responseFormat": "json" } }

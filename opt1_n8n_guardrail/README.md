@@ -81,10 +81,10 @@ curl -fsSL https://ollama.com/install.sh | sh
 ollama serve &
 
 # Bajar Qwen 2.5 (~2 GB):
-ollama pull qwen2.5:3b
+ollama pull qwen2.5:1.5b
 
 # Verificar que funciona:
-ollama run qwen2.5:3b "Hola, ¿qué tal?"
+ollama run qwen2.5:1.5b "Hola, ¿qué tal?"
 ```
 
 ### 2. Levantar N8N con Docker
@@ -280,7 +280,7 @@ curl -X POST http://localhost:5678/webhook-test/llm-guardrail \
 |---|---|---|
 | `ECONNREFUSED 127.0.0.1:11434` | N8N en Docker no ve `localhost` | Cambia por `host.docker.internal` (Mac/Win) o IP del host (Linux) |
 | Primer prompt tarda 30+ segundos | Carga inicial del modelo en RAM | Normal: el segundo prompt va rápido |
-| `model qwen2.5:3b not found` | No has hecho `ollama pull qwen2.5:3b` | Ejecuta el `pull` |
+| `model qwen2.5:1.5b not found` | No has hecho `ollama pull qwen2.5:1.5b` | Ejecuta el `pull` |
 | `401 Authentication failed` (DeepSeek) | Header `Authorization` mal puesto | Debe ser `Bearer sk-...` (con espacio) |
 | `Install this node to use it` (OpenAI nativo) | Nodo deprecado en N8N moderno | Usa estos workflows: solo `httpRequest`, sin custom nodes |
 

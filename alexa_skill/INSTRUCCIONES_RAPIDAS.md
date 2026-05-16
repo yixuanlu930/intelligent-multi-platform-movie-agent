@@ -3,7 +3,7 @@
 ## En terminal
 
 ```bash
-cd alexa_skill_def
+cd alexa_skill
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
