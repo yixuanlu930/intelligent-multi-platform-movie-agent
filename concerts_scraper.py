@@ -17,14 +17,22 @@ import requests
 
 import config
 
-# URL por defecto si no esta declarada en config.py
+# URL por defecto de la API de Wegow si no esta declarada en config.py.
+# El parametro cities=3117735 filtra por Madrid (3117735 es el ID de Madrid en Wegow).
 DEFAULT_WEGOW_API = "https://www.wegow.com/api/events?cities=3117735"
 
 
 def fetch_concerts(limit_days=7):
     """
-    Consulta la API de Wegow y devuelve los conciertos en Madrid
+    Consulta la API publica de Wegow y devuelve los conciertos en Madrid
     de los proximos `limit_days` dias.
+
+    Formato de cada evento devuelto:
+        id, titulo, fecha (YYYY-MM-DD), hora (HH:MM),
+        artistas (lista de nombres), recinto, url.
+
+    Los eventos se ordenan por fecha ascendente.
+    Devuelve una lista vacia si hay error de red o no hay conciertos.
     """
     api_url = getattr(config, "WEGOW_API", DEFAULT_WEGOW_API)
     try:
@@ -35,6 +43,7 @@ def fetch_concerts(limit_days=7):
         return []
 
     data = r.json()
+    # La API devuelve un dict con clave "events" o directamente una lista
     events = data.get("events", []) if isinstance(data, dict) else []
 
     today = datetime.now(timezone.utc).date()
@@ -42,12 +51,12 @@ def fetch_concerts(limit_days=7):
 
     out = []
     for e in events:
-        # Filtro por ciudad: solo Madrid
+        # Filtro por ciudad: solo Madrid (la API puede devolver otras ciudades)
         city = e.get("city") or {}
         if city.get("name") != "Madrid":
             continue
 
-        # Filtro temporal: solo la ventana solicitada
+        # Filtro temporal: solo eventos dentro de la ventana solicitada
         sd = e.get("start_date")
         if not sd:
             continue
@@ -63,18 +72,29 @@ def fetch_concerts(limit_days=7):
             "id":       e.get("id"),
             "titulo":   e.get("title"),
             "fecha":    dt.isoformat(),
+            # La hora viene en los primeros 16 chars de start_date si esta disponible
             "hora":     sd[11:16] if len(sd) >= 16 else "",
             "artistas": [a.get("name") for a in (e.get("artists") or [])],
             "recinto":  venue.get("name") or "",
             "url":      e.get("permalink") or e.get("purchase_url") or "",
         })
 
+    # Ordenar por fecha para mostrar los mas proximos primero
     out.sort(key=lambda c: c["fecha"])
     return out
 
 
 def filter_by_favorite_artists(concerts, profile=None):
-    """Devuelve solo los conciertos que incluyen artistas del perfil favorito."""
+    """
+    Devuelve solo los conciertos que incluyen al menos un artista
+    de la lista favorite_artists del perfil del usuario.
+
+    La comparacion es insensible a mayusculas (case-insensitive).
+    Si el perfil no tiene artistas favoritos, devuelve la lista completa.
+
+    Añade la clave _match a cada concierto con el nombre del artista
+    favorito que coincidio, para poder mostrarlo en el mensaje.
+    """
     if profile is None:
         with open(config.USER_PROFILE_FILE, encoding="utf-8") as f:
             profile = json.load(f)
@@ -89,12 +109,19 @@ def filter_by_favorite_artists(concerts, profile=None):
                 # Marcamos cual artista fue el match para poder mostrarlo despues
                 c["_match"] = a
                 out.append(c)
-                break
+                break  # Con un artista favorito basta para incluir el concierto
     return out
 
 
 def format_concerts_text(concerts, only_favorites=False):
-    """Formatea la lista de conciertos como texto legible."""
+    """
+    Formatea la lista de conciertos como texto plano legible.
+
+    Si only_favorites=True usa un titulo diferente para dejar claro
+    que son los conciertos filtrados por artistas favoritos.
+    Cada concierto muestra: fecha, hora, titulo, artistas, sala, url
+    y el artista favorito que coincidio (si lo hay).
+    """
     if not concerts:
         return "Sin conciertos favoritos esta semana." if only_favorites else "Sin conciertos esta semana."
 

@@ -24,6 +24,8 @@ from movie_scraper import get_movie_info
 
 # ============================================================
 # Cines principales de Madrid en ecartelera.com
+# Cada tupla es (nombre_legible, url_de_la_pagina_del_cine).
+# Las URLs usan el formato /cines/ID,0,1.html de ecartelera.
 # ============================================================
 
 CINES_MADRID = [
@@ -42,8 +44,13 @@ CINES_MADRID = [
 
 def scrape_cinema(cinema_name, cinema_url):
     """
-    Scrapea las peliculas en cartelera de un cine concreto.
-    Devuelve una lista de dicts con info basica de ecartelera.
+    Scrapea las peliculas en cartelera de un cine concreto desde ecartelera.com.
+
+    Para cada pelicula extrae: titulo, duracion, pais, genero, clasificacion,
+    director, nota de ecartelera y horarios del dia.
+
+    Devuelve una lista de dicts con info basica de ecartelera,
+    o una lista vacia si hay error de red o no se encuentran peliculas.
     """
     try:
         r = requests.get(cinema_url, headers=config.REQUEST_HEADERS, timeout=15)
@@ -53,6 +60,7 @@ def scrape_cinema(cinema_name, cinema_url):
         return []
 
     soup = BeautifulSoup(r.text, "lxml")
+    # Cada pelicula en cartelera aparece dentro de un div con clase "titem"
     items = soup.find_all("div", class_="titem")
     movies = []
 
@@ -65,7 +73,7 @@ def scrape_cinema(cinema_name, cinema_url):
         title = link_el.get_text(strip=True) if link_el else title_el.get_text(strip=True)
         ecartelera_url = link_el.get("href", "") if link_el else ""
 
-        # Metadata: duracion, pais, genero, clasificacion
+        # Metadata: los spans dentro de "data" contienen duracion, pais, genero y clasificacion
         data_el = item.find("p", class_="data")
         data_spans = data_el.find_all("span") if data_el else []
         duracion = data_spans[0].get_text(strip=True) if len(data_spans) > 0 else ""
@@ -73,18 +81,18 @@ def scrape_cinema(cinema_name, cinema_url):
         genero = data_spans[2].get_text(strip=True) if len(data_spans) > 2 else ""
         clasificacion = data_spans[3].get_text(strip=True) if len(data_spans) > 3 else ""
 
-        # Director
+        # Director: dentro del parrafo "dir", los links son los nombres de directores
         dir_el = item.find("p", class_="dir")
         director = ""
         if dir_el:
             dir_links = dir_el.find_all("a")
             director = ", ".join(a.get_text(strip=True) for a in dir_links)
 
-        # Nota de ecartelera
+        # Nota de ecartelera (escala propia del sitio)
         score_el = item.find("span", class_="nota")
         nota_ecartelera = score_el.get_text(strip=True) if score_el else ""
 
-        # Horarios
+        # Horarios: cada sesion tiene un atributo data-session-time con la hora
         sessions_el = item.find("div", class_="sessions")
         horarios = []
         if sessions_el:
@@ -111,8 +119,13 @@ def scrape_cinema(cinema_name, cinema_url):
 
 def get_cartelera_madrid():
     """
-    Obtiene la cartelera completa de Madrid scrapeando varios cines.
-    Deduplica peliculas (agrupa cines y horarios por titulo).
+    Obtiene la cartelera completa de Madrid scrapeando todos los cines de CINES_MADRID.
+
+    Deduplica peliculas por titulo: si una pelicula aparece en varios cines,
+    se agrupa en un unico dict con todos los cines y horarios acumulados.
+    Esto evita mostrar la misma pelicula varias veces en la lista final.
+
+    Devuelve una lista de dicts con una entrada por pelicula unica.
     """
     all_movies = {}
 
@@ -121,6 +134,7 @@ def get_cartelera_madrid():
         movies = scrape_cinema(cinema_name, cinema_url)
 
         for m in movies:
+            # Usamos el titulo en minusculas como clave de deduplicacion
             key = m["titulo"].lower().strip()
             if key not in all_movies:
                 all_movies[key] = {
@@ -131,21 +145,22 @@ def get_cartelera_madrid():
                     "director": m["director"],
                     "nota_ecartelera": m["nota_ecartelera"],
                     "ecartelera_url": m["ecartelera_url"],
-                    "cines": {},
+                    "cines": {},  # dict cine_name → lista de horarios
                 }
 
-            # Agregar cine y horarios
+            # Agregar este cine con sus horarios a la entrada existente
             cine_name = m["cine"]
             if cine_name not in all_movies[key]["cines"]:
                 all_movies[key]["cines"][cine_name] = m["horarios"]
             else:
+                # Si el cine ya estaba, acumulamos los horarios sin duplicar
                 all_movies[key]["cines"][cine_name].extend(m["horarios"])
 
-            # Actualizar nota si no la teniamos
+            # Actualizar nota si no la teniamos aun (primer cine que la tenga gana)
             if not all_movies[key]["nota_ecartelera"] and m["nota_ecartelera"]:
                 all_movies[key]["nota_ecartelera"] = m["nota_ecartelera"]
 
-        time.sleep(0.5)  # Ser amable con el servidor
+        time.sleep(0.5)  # Pausa entre cines para no sobrecargar el servidor
 
     return list(all_movies.values())
 
@@ -157,6 +172,12 @@ def get_cartelera_madrid():
 def enrich_with_sensacine(movies):
     """
     Enriquece las peliculas de cartelera con datos de SensaCine.
+
+    Para cada pelicula busca en SensaCine (via movie_scraper.get_movie_info)
+    y añade: nota, votos, sinopsis, genero, url y poster de SensaCine.
+    Si no se encuentra la pelicula, rellena los campos con valores por defecto.
+
+    Devuelve la misma lista con los campos extra añadidos a cada dict.
     """
     enriched = []
     for m in movies:
@@ -172,6 +193,7 @@ def enrich_with_sensacine(movies):
             m["sensacine_url"] = sc_info.get("url", "")
             m["poster"] = sc_info.get("poster", "")
         else:
+            # Pelicula no encontrada en SensaCine: valores neutros para no romper el filtro
             m["nota_sensacine"] = "N/A"
             m["nota_escala"] = "/5"
             m["votos_sensacine"] = 0
@@ -181,7 +203,7 @@ def enrich_with_sensacine(movies):
             m["poster"] = ""
 
         enriched.append(m)
-        time.sleep(0.3)
+        time.sleep(0.3)  # Pausa entre peliculas para no sobrecargar SensaCine
 
     return enriched
 
@@ -191,7 +213,7 @@ def enrich_with_sensacine(movies):
 # ============================================================
 
 def load_user_profile():
-    """Carga el perfil de usuario desde disco."""
+    """Carga el perfil de usuario desde disco (user_profile.json)."""
     path = config.USER_PROFILE_FILE
     if os.path.exists(path):
         with open(path, "r", encoding="utf-8") as f:
@@ -202,10 +224,14 @@ def load_user_profile():
 def filter_by_profile(movies, profile=None):
     """
     Filtra peliculas segun el perfil del usuario.
-    - Generos: la nota SensaCine debe superar el minimo configurado para ese genero.
-    - Directores favoritos: siempre pasan el filtro.
 
-    Nota: el perfil (user_profile.json) define notas minimas en escala SensaCine (/5).
+    Reglas de filtrado:
+    - Directores favoritos: la pelicula siempre pasa el filtro sin importar la nota.
+    - Generos configurados: la nota SensaCine debe superar el minimo configurado para ese genero.
+    - Genero no configurado: pasa si la nota supera 3.5 (umbral por defecto).
+    - Peliculas sin nota SensaCine: se descartan siempre (no hay criterio objetivo).
+
+    Nota: las notas del perfil (user_profile.json) estan en escala SensaCine (/5).
     """
     if profile is None:
         profile = load_user_profile()
@@ -213,18 +239,19 @@ def filter_by_profile(movies, profile=None):
     genre_filters = profile.get("genres", {})
     fav_directors = [d.lower() for d in profile.get("favorite_directors", [])]
 
+    # Si el perfil esta vacio, devolvemos todas las peliculas sin filtrar
     if not genre_filters and not fav_directors:
         return movies
 
     filtered = []
     for m in movies:
-        # Director favorito -> siempre pasa
+        # Regla 1: director favorito → siempre pasa, sin importar nota ni genero
         director = m.get("director", "").lower()
         if any(fav in director for fav in fav_directors):
             filtered.append(m)
             continue
 
-        # Filtro por genero + nota
+        # Regla 2: peliculas sin nota SensaCine → descartamos (no podemos evaluar)
         nota = m.get("nota_sensacine", "N/A")
         if nota == "N/A":
             continue
@@ -239,7 +266,7 @@ def filter_by_profile(movies, profile=None):
                     passed = True
                     break
 
-        # Si no tiene genero configurado, dejamos pasar si supera la nota minima por defecto
+        # Regla 3: genero no configurado → aplicar umbral por defecto de 3.5
         if not passed and not any(g.lower() in genres_movie.lower() for g in genre_filters):
             if nota >= 3.5:
                 passed = True
@@ -255,7 +282,13 @@ def filter_by_profile(movies, profile=None):
 # ============================================================
 
 def send_telegram(message, chat_id=None):
-    """Envia un mensaje por Telegram."""
+    """
+    Envia un mensaje por Telegram usando la API directa (sin SDK).
+
+    El mensaje se trocea en chunks de 4000 caracteres para respetar el
+    limite de 4096 caracteres por mensaje de la API de Telegram.
+    Devuelve True si el envio fue correcto, False si hubo algun error.
+    """
     token = config.TELEGRAM_BOT_TOKEN
     chat_id = chat_id or config.TELEGRAM_CHAT_ID
 
@@ -265,7 +298,7 @@ def send_telegram(message, chat_id=None):
         return False
 
     url = f"https://api.telegram.org/bot{token}/sendMessage"
-    # Telegram tiene un limite de 4096 caracteres por mensaje
+    # Telegram tiene un limite de 4096 caracteres por mensaje; trocemos con margen
     chunks = [message[i:i+4000] for i in range(0, len(message), 4000)]
 
     for chunk in chunks:
@@ -290,7 +323,11 @@ def send_telegram(message, chat_id=None):
 # ============================================================
 
 def format_cartelera_text(movies):
-    """Formatea la cartelera como texto legible."""
+    """
+    Formatea la cartelera como texto plano legible para consola.
+    Muestra nota, genero, director, duracion, sinopsis (primeros 150 chars),
+    cines con horarios y links a eCartelera y SensaCine.
+    """
     lines = ["=" * 55]
     lines.append("  CARTELERA DE CINE - MADRID")
     lines.append("=" * 55)
@@ -335,7 +372,11 @@ def format_cartelera_text(movies):
 
 
 def format_cartelera_telegram(movies):
-    """Formatea la cartelera para Telegram (HTML)."""
+    """
+    Formatea la cartelera en HTML para enviar por Telegram.
+    Usa etiquetas <b> y <a href> que Telegram renderiza correctamente
+    con parse_mode='HTML'.
+    """
     lines = ["<b>🎬 CARTELERA DE CINE - MADRID</b>\n"]
 
     for m in movies:
@@ -412,15 +453,15 @@ def main():
         movies = filter_by_profile(movies, profile)
         print(f"  {len(movies)} peliculas tras filtro", file=sys.stderr)
 
-    # Ordenar por nota SensaCine descendente
+    # Ordenar por nota SensaCine descendente para mostrar las mejores primero
     def sort_key(m):
         nota = m.get("nota_sensacine", "N/A")
         return float(nota) if nota != "N/A" else 0
     movies.sort(key=sort_key, reverse=True)
 
-    # Salida
+    # Salida en el formato solicitado
     if args.formato == "json":
-        # Convertir sets/etc a serializable
+        # Convertir cines dict a lista serializable para JSON
         for m in movies:
             if "cines" in m:
                 m["cines"] = {k: list(v) for k, v in m["cines"].items()}
@@ -430,7 +471,7 @@ def main():
     else:
         print(format_cartelera_text(movies))
 
-    # Envio por Telegram
+    # Envio por Telegram si se solicito
     if args.telegram:
         msg = format_cartelera_telegram(movies)
         if send_telegram(msg, chat_id=args.chat_id):

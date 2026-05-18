@@ -51,8 +51,12 @@ logger = logging.getLogger(__name__)
 
 def query_llm(prompt):
     """
-    Consulta al LLM open source (Ollama) para generar respuestas naturales.
-    Si Ollama no esta disponible, devuelve None.
+    Consulta al LLM open source (Ollama) para generar un comentario breve
+    sobre la pelicula que enriquece la respuesta al usuario.
+
+    Es opcional: si Ollama no esta disponible (no instalado, no arrancado,
+    sin modelo descargado), devuelve None y el bot responde igualmente con
+    la ficha de SensaCine sin el comentario del LLM.
     """
     try:
         import ollama
@@ -69,7 +73,13 @@ def query_llm(prompt):
 
 
 def format_movie_response(info, field=None):
-    """Formatea la respuesta de una pelicula para Telegram."""
+    """
+    Formatea la informacion de una pelicula como mensaje HTML para Telegram.
+
+    Si se especifica un campo concreto (nota, director, duracion, sinopsis),
+    devuelve solo ese dato con un formato compacto.
+    Si field es None, devuelve la ficha completa con todos los campos.
+    """
     escala = info.get("nota_escala", "/5")
     if field == "nota":
         text = f"⭐ <b>{info['titulo']}</b> ({info['año']})\nNota SensaCine: {info['nota']}{escala} ({info['votos']:,} votos)"
@@ -80,6 +90,7 @@ def format_movie_response(info, field=None):
     elif field == "sinopsis":
         text = f"📖 <b>{info['titulo']}</b> ({info['año']})\n\n{info['sinopsis']}"
     else:
+        # Ficha completa con todos los campos disponibles
         text = (
             f"🎬 <b>{info['titulo']}</b> ({info['año']})\n"
             f"{'─' * 25}\n"
@@ -92,11 +103,13 @@ def format_movie_response(info, field=None):
         )
     return text
 
+
 # ============================================================
 # Handlers de comandos
 # ============================================================
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Muestra el mensaje de bienvenida con la lista de comandos disponibles."""
     await update.message.reply_text(
         "🎬 <b>Agente de Peliculas</b>\n\n"
         "Puedo darte informacion sobre cualquier pelicula.\n\n"
@@ -115,10 +128,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def ayuda(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Alias de /start: muestra la misma pantalla de ayuda."""
     await start(update, context)
 
 
 async def pelicula_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Maneja el comando /pelicula <nombre>.
+    Devuelve la ficha completa de la pelicula con comentario del LLM si esta disponible.
+    """
     if not context.args:
         await update.message.reply_text("Uso: /pelicula <nombre de la pelicula>")
         return
@@ -130,7 +148,7 @@ async def pelicula_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if info:
         response = format_movie_response(info)
         escala = info.get("nota_escala", "/5")
-        # Intentar enriquecer con LLM
+        # Intentar enriquecer con comentario del LLM (opcional, puede fallar)
         llm_response = query_llm(
             f"En una frase breve, recomienda o comenta sobre la pelicula '{info['titulo']}' "
             f"({info['año']}) dirigida por {info['director']}. Nota SensaCine: {info['nota']}{escala}."
@@ -143,6 +161,7 @@ async def pelicula_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def nota_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Maneja el comando /nota <nombre>. Devuelve solo la nota SensaCine."""
     if not context.args:
         await update.message.reply_text("Uso: /nota <nombre de la pelicula>")
         return
@@ -155,6 +174,7 @@ async def nota_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def director_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Maneja el comando /director <nombre>. Devuelve solo el director."""
     if not context.args:
         await update.message.reply_text("Uso: /director <nombre de la pelicula>")
         return
@@ -167,6 +187,7 @@ async def director_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def duracion_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Maneja el comando /duracion <nombre>. Devuelve solo la duracion."""
     if not context.args:
         await update.message.reply_text("Uso: /duracion <nombre de la pelicula>")
         return
@@ -179,6 +200,7 @@ async def duracion_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def sinopsis_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Maneja el comando /sinopsis <nombre>. Devuelve solo la sinopsis completa."""
     if not context.args:
         await update.message.reply_text("Uso: /sinopsis <nombre de la pelicula>")
         return
@@ -191,17 +213,23 @@ async def sinopsis_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def cartelera_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Maneja el comando /cartelera.
+    Obtiene la cartelera de Madrid enriquecida con SensaCine y la formatea
+    para Telegram. Limita a 15 peliculas para no exceder el limite de mensaje.
+    Si el usuario añade 'filtrar' como argumento, aplica el perfil de usuario.
+    """
     await update.message.reply_text("🎬 Obteniendo cartelera de Madrid... (puede tardar unos segundos)")
 
     movies = get_cartelera_madrid()
     movies = enrich_with_sensacine(movies)
 
-    # Aplicar filtro si el usuario lo pide con --filtrar
+    # Aplicar filtro de perfil si el usuario lo pide explicitamente
     if context.args and "filtrar" in context.args:
         profile = load_user_profile()
         movies = filter_by_profile(movies, profile)
 
-    # Ordenar por nota
+    # Ordenar por nota descendente para mostrar las mejores primero
     def sort_key(m):
         nota = m.get("nota_sensacine", "N/A")
         return float(nota) if nota != "N/A" else 0
@@ -211,9 +239,9 @@ async def cartelera_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("No se encontraron peliculas en cartelera.")
         return
 
-    # Formatear respuesta
+    # Formatear respuesta en HTML para Telegram
     lines = ["🎬 <b>CARTELERA DE CINE - MADRID</b>\n"]
-    for m in movies[:15]:  # Limitar a 15 para no exceder Telegram
+    for m in movies[:15]:  # Limitamos a 15 para no exceder el limite de Telegram
         nota_sc = m.get("nota_sensacine", "N/A")
         escala = m.get("nota_escala", "/5")
         nota_str = f"{nota_sc}{escala}" if nota_sc != "N/A" else "Sin nota"
@@ -240,6 +268,10 @@ async def cartelera_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def perfil_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Muestra el perfil de usuario activo (generos con nota minima y directores favoritos).
+    Permite al usuario ver con que criterios se esta filtrando la cartelera.
+    """
     profile = load_user_profile()
     genres = profile.get("genres", {})
     directors = profile.get("favorite_directors", [])
@@ -257,7 +289,11 @@ async def perfil_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def text_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Maneja mensajes de texto libre - busca la pelicula directamente."""
+    """
+    Maneja mensajes de texto libre (sin comando /).
+    Interpreta el texto como nombre de pelicula y busca directamente,
+    igual que /pelicula pero sin necesitar escribir el comando.
+    """
     movie_name = update.message.text.strip()
     if not movie_name:
         return
@@ -279,11 +315,17 @@ async def text_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Prueba con /ayuda para ver los comandos disponibles."
         )
 
+
 # ============================================================
 # Main
 # ============================================================
 
 def main():
+    """
+    Punto de entrada del bot. Verifica el token, registra todos los handlers
+    y arranca el polling (el bot pregunta a Telegram cada pocos segundos
+    si hay mensajes nuevos, sin necesitar IP publica ni HTTPS).
+    """
     token = config.TELEGRAM_BOT_TOKEN
     if not token or token == "TU_TOKEN_AQUI":
         print("Error: Configura TELEGRAM_BOT_TOKEN en config.py", file=sys.stderr)
@@ -294,6 +336,7 @@ def main():
 
     app = Application.builder().token(token).build()
 
+    # Registrar handlers de comandos
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("ayuda", ayuda))
     app.add_handler(CommandHandler("help", ayuda))
@@ -304,6 +347,7 @@ def main():
     app.add_handler(CommandHandler("sinopsis", sinopsis_cmd))
     app.add_handler(CommandHandler("cartelera", cartelera_cmd))
     app.add_handler(CommandHandler("perfil", perfil_cmd))
+    # Handler de texto libre: debe ir al final para no interferir con los comandos
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_message))
 
     print("Bot de Telegram iniciado. Presiona Ctrl+C para detener.")

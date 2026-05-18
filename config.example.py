@@ -10,8 +10,10 @@ contiene tokens y claves privadas.
 # --- Telegram ---
 # Obtener token de @BotFather en Telegram (/newbot).
 TELEGRAM_BOT_TOKEN = "TU_TOKEN_AQUI"
-# Chat ID para el envio automatico de cartelera/conciertos.
-# Para obtenerlo: hablar al bot y mirar el JSON de https://api.telegram.org/bot<TOKEN>/getUpdates
+# Chat ID del usuario o grupo al que el bot enviara mensajes automaticos
+# (cartelera semanal, conciertos favoritos, etc.).
+# Para obtenerlo: hablar al bot y mirar el JSON de
+# https://api.telegram.org/bot<TOKEN>/getUpdates → result[0].message.chat.id
 TELEGRAM_CHAT_ID = ""
 
 # --- LLM Open Source (Ollama) ---
@@ -28,7 +30,11 @@ GROQ_MODEL = "llama-3.3-70b-versatile"
 # --- Scraping ---
 IMDB_BASE_URL = "https://www.imdb.com"
 ECARTELERA_URL = "https://www.ecartelera.com"
-WEGOW_API = "https://www.wegow.com/api/events?cities=3117735"  # 3117735 = Madrid
+WEGOW_API = "https://www.wegow.com/api/events?cities=3117735"  # 3117735 = ID de Madrid en Wegow
+
+# Headers HTTP que simulan un navegador real para evitar bloqueos de los scrapers.
+# Sin User-Agent algunos sitios devuelven 403 o contenido diferente.
+# Accept-Language: es-ES garantiza que las paginas respondan en español.
 REQUEST_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                   "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
@@ -37,9 +43,13 @@ REQUEST_HEADERS = {
 }
 
 # --- Cache ---
+# Fichero JSON donde se guardan las peliculas ya consultadas.
+# Evita peticiones repetidas a SensaCine para la misma pelicula.
 CACHE_FILE = "movie_cache.json"
 
 # --- Perfil de usuario ---
+# Fichero JSON con las preferencias del usuario: generos con nota minima,
+# directores favoritos y artistas de musica favoritos.
 USER_PROFILE_FILE = "user_profile.json"
 
 # --- Web App ---
