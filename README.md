@@ -1,4 +1,811 @@
-# Agente Inteligente para Peliculas — Multi-Frontend
+# Intelligent Movie Agent
+
+A multi-platform **AI entertainment assistant** for discovering movies, cinema listings, and concerts, combining web scraping, external APIs, local LLMs, automation, and multiple user interfaces.
+
+The project provides access through **CLI, Web, Telegram, and Amazon Alexa**, while sharing reusable Python modules for movie information, personalized filtering, calendar generation, conversational responses, and automated workflows.
+
+## Overview
+
+The Intelligent Movie Agent was designed as a modular intelligent-agent system capable of collecting entertainment information and making it accessible through different interfaces.
+
+Its main capabilities include:
+
+* Movie information retrieval
+* Madrid cinema listings
+* Movie preference filtering
+* Concert discovery in Madrid
+* Telegram interaction
+* Amazon Alexa voice interaction
+* Flask web interface
+* Local LLM integration with Ollama
+* Personalized natural-language responses
+* iCalendar export
+* Scheduled weekly tasks
+* Customer-service sentiment analysis
+* n8n LLM guardrails
+* Optional generative-audio experimentation
+
+The architecture separates the data-retrieval logic from the user interfaces so that the same functionality can be reused across multiple frontends.
+
+---
+
+# Main Features
+
+## Movie Information
+
+The main movie module can retrieve information such as:
+
+* Title
+* Original title
+* Release year
+* Rating
+* Number of votes
+* Synopsis
+* Director
+* Duration
+* Genre
+* Poster
+* Source URL
+
+The primary implementation obtains movie data from **SensaCine** using HTML scraping with:
+
+* `requests`
+* `BeautifulSoup`
+* `lxml`
+* JSON-LD metadata extraction
+
+Results are cached locally to avoid unnecessary repeated requests.
+
+---
+
+## Madrid Cinema Listings
+
+The project includes a scraper for current cinema listings in Madrid.
+
+Information is collected from several cinemas, including venues such as:
+
+* Yelmo Cines Ideal
+* Callao
+* Cinesa Proyecciones
+* Cines Princesa
+* Palacio de la Prensa
+* Renoir Plaza de España
+* Cinesa Príncipe Pío
+
+For each movie, the system can retrieve:
+
+* Title
+* Runtime
+* Country
+* Genre
+* Age classification
+* Director
+* Rating
+* Screening times
+* Cinema
+
+The cinema information is enriched with additional movie metadata.
+
+---
+
+## Personalized Movie Filtering
+
+A configurable user profile can be used to filter cinema recommendations.
+
+Example:
+
+```json
+{
+  "genres": {
+    "Sci-Fi": 6.0,
+    "Drama": 7.0,
+    "Comedy": 6.0,
+    "Horror": 5.5
+  },
+  "favorite_directors": [
+    "Christopher Nolan",
+    "Quentin Tarantino",
+    "Pedro Almodovar"
+  ]
+}
+```
+
+The filtering logic can consider:
+
+* Preferred genres
+* Minimum rating by genre
+* Favorite directors
+* General quality thresholds
+
+This allows the agent to generate a more personalized cinema selection.
+
+---
+
+# Concert Discovery
+
+The project also includes a Madrid concert agent.
+
+Concert information is retrieved from the Wegow event service and filtered by:
+
+* Location
+* Date range
+* Favorite artists
+
+Information includes:
+
+```text
+Event title
+Date
+Time
+Artists
+Venue
+Event URL
+```
+
+This extends the project beyond cinema into a broader entertainment assistant.
+
+---
+
+# Multi-Frontend Architecture
+
+One of the main characteristics of the project is that the same underlying logic can be accessed through several interfaces.
+
+```text
+                         ┌─────────────────┐
+                         │      User       │
+                         └────────┬────────┘
+                                  │
+          ┌───────────────────────┼────────────────────────┐
+          │                       │                        │
+          ▼                       ▼                        ▼
+ ┌────────────────┐      ┌────────────────┐       ┌────────────────┐
+ │  Telegram Bot  │      │   Flask Web    │       │ Amazon Alexa   │
+ └────────┬───────┘      └────────┬───────┘       └────────┬───────┘
+          │                       │                        │
+          └───────────────────────┼────────────────────────┘
+                                  │
+                                  ▼
+                     ┌────────────────────────┐
+                     │ Shared Agent Modules   │
+                     ├────────────────────────┤
+                     │ Movie retrieval        │
+                     │ Cinema listings        │
+                     │ Concert discovery      │
+                     │ User preferences       │
+                     │ Calendar generation    │
+                     │ LLM integration        │
+                     └───────────┬────────────┘
+                                 │
+              ┌──────────────────┼───────────────────┐
+              │                  │                   │
+              ▼                  ▼                   ▼
+       SensaCine / OMDb      eCartelera           Wegow
+              │
+              ▼
+       Ollama / Qwen LLM
+```
+
+A command-line interface is also available for direct movie queries.
+
+---
+
+# Telegram Bot
+
+The Telegram bot provides a conversational interface for the movie agent.
+
+Supported commands include:
+
+```text
+/start
+/pelicula <movie>
+/nota <movie>
+/director <movie>
+/duracion <movie>
+/sinopsis <movie>
+/cartelera
+/perfil
+/ayuda
+```
+
+Users can also enter a movie title directly.
+
+Example:
+
+```text
+/pelicula Inception
+```
+
+The bot retrieves the corresponding movie information and can optionally ask the local LLM to generate a short contextual comment.
+
+---
+
+# Local LLM Integration
+
+The project integrates an open-source LLM using:
+
+* Ollama
+* Qwen 2.5
+* LangChain
+
+The model can run locally instead of relying exclusively on a commercial cloud API.
+
+Example architecture:
+
+```text
+User request
+    │
+    ▼
+Structured movie data
+    │
+    ▼
+Prompt construction
+    │
+    ▼
+Ollama + Qwen
+    │
+    ▼
+Natural-language response
+```
+
+Running the LLM locally offers benefits such as:
+
+* Privacy
+* Offline experimentation
+* No per-request API cost
+* Full model control
+
+The application is designed so that core functionality can still operate if the LLM is unavailable.
+
+---
+
+# Amazon Alexa Skill
+
+The repository includes an Amazon Alexa Skill for voice-based movie queries.
+
+The Alexa implementation uses **OMDb** as a stable movie-information source for AWS Lambda deployment.
+
+Users can ask questions such as:
+
+```text
+"What is the rating of Inception?"
+"Who directed Interstellar?"
+"How long is The Matrix?"
+"What is Parasite about?"
+"Tell me everything about The Godfather."
+```
+
+Supported intents include:
+
+* Rating
+* Number of votes
+* Synopsis
+* Director
+* Duration
+* Genre
+* Full movie information
+
+The implementation includes:
+
+* AWS Lambda function
+* Alexa interaction model
+* OMDb client
+* Movie cache
+* Deployment script
+* Optional DynamoDB caching
+
+---
+
+# Flask Web Application
+
+The project also provides a Flask-based browser interface.
+
+The web application reuses the same underlying modules for:
+
+* Movie search
+* Movie information
+* Madrid cinema listings
+* Recommendation filtering
+
+This demonstrates separation between application logic and presentation layers.
+
+---
+
+# Calendar Integration
+
+The project can export entertainment events to the standard **iCalendar (`.ics`) format**.
+
+Two types of calendars can be generated:
+
+```text
+agenda_conciertos.ics
+agenda_cartelera.ics
+```
+
+These files can be imported into applications such as:
+
+* Google Calendar
+* Apple Calendar
+* Microsoft Outlook
+
+The implementation follows RFC 5545 and generates deterministic event identifiers to reduce duplicate events when a calendar is imported multiple times.
+
+---
+
+# Automated Scheduling
+
+Weekly entertainment information can be generated automatically using cron.
+
+For example, the Madrid cinema agent can run every Monday morning:
+
+```cron
+0 9 * * 1 /path/to/project/cron_cartelera.sh
+```
+
+The scheduled process can:
+
+1. Retrieve the latest cinema listings.
+2. Enrich movie information.
+3. Filter movies using the user profile.
+4. Generate a personalized selection.
+5. Send the result through Telegram.
+
+A similar workflow is available for concert information.
+
+---
+
+# Customer-Service Agent
+
+The repository also includes a small intelligent customer-service agent.
+
+It follows a hybrid architecture:
+
+```text
+Customer message
+      │
+      ▼
+Lexical sentiment classifier
+      │
+      ├── Positive
+      ├── Neutral
+      └── Negative
+      │
+      ▼
+Local LLM
+      │
+      ▼
+Context-aware response
+```
+
+The deterministic sentiment classifier operates independently of the LLM.
+
+The LLM is then used only to formulate a natural-language response adapted to the detected sentiment.
+
+This provides graceful degradation if the local language model is unavailable.
+
+---
+
+# n8n LLM Guardrail
+
+An optional module demonstrates how to wrap an LLM with input and output safety checks using **n8n**.
+
+The workflow provides two layers:
+
+```text
+Prompt
+  │
+  ▼
+Input Guardrail
+  │
+  ▼
+LLM
+  │
+  ▼
+Output Guardrail
+  │
+  ▼
+Response
+```
+
+The input layer can detect cases such as:
+
+* Prompt injection
+* Prohibited content
+* Obvious personally identifiable information
+
+The output layer validates the generated response before returning it to the user.
+
+Two LLM configurations are provided:
+
+* Ollama + Qwen
+* DeepSeek
+
+The module is located in:
+
+```text
+opt1_n8n_guardrail/
+```
+
+---
+
+# Optional Generative Audio Experiment
+
+The repository also contains an experimental module under:
+
+```text
+opt2_comfyui_acestep/
+```
+
+It explores generative audio workflows using ComfyUI and ACE-Step.
+
+This component is independent from the main movie assistant and is included as an additional intelligent-system experiment.
+
+---
+
+# Project Structure
+
+```text
+intelligent-movie-agent/
+│
+├── movie_scraper.py
+├── cartelera_scraper.py
+├── concerts_scraper.py
+├── concerts_cron.py
+│
+├── telegram_bot.py
+├── web_app.py
+├── email_agent.py
+├── calendar_agent.py
+│
+├── cron_cartelera.sh
+├── cron_weekly.sh
+│
+├── user_profile.json
+├── config.example.py
+├── requirements.txt
+│
+├── templates/
+│   └── ...
+│
+├── alexa_skill/
+│   ├── lambda_function.py
+│   ├── imdb_scraper.py
+│   ├── cache.py
+│   ├── interactionModel.json
+│   ├── deploy_lambda.sh
+│   ├── requirements.txt
+│   └── README_ALEXA.md
+│
+├── opt1_n8n_guardrail/
+│   ├── llm_guardrail_ollama.json
+│   ├── llm_guardrail_deepseek.json
+│   ├── test_guardrail.py
+│   ├── prompts_test.txt
+│   └── README.md
+│
+├── opt2_comfyui_acestep/
+│   ├── generar_cancion.py
+│   ├── acestep_workflow.json
+│   ├── acestep_workflow_instrumental.json
+│   ├── test_workflow.py
+│   └── README.md
+│
+├── Practica_Agentes.ipynb
+├── README.md
+└── .gitignore
+```
+
+---
+
+# Installation
+
+## Requirements
+
+Recommended:
+
+```text
+Python 3.11+
+```
+
+Create a virtual environment:
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+The main dependencies include:
+
+* requests
+* BeautifulSoup
+* lxml
+* Flask
+* python-telegram-bot
+* Alexa Skills Kit SDK
+* Ollama
+* LangChain
+* LangChain Ollama
+
+---
+
+# Configuration
+
+Copy the example configuration:
+
+```bash
+cp config.example.py config.py
+```
+
+Then configure the services you want to use.
+
+Depending on the selected frontend, this may include credentials such as:
+
+```text
+Telegram Bot token
+OMDb API key
+Other external-service credentials
+```
+
+Do not commit real API keys or credentials to GitHub.
+
+The repository's `.gitignore` already excludes:
+
+```text
+config.py
+config.json
+.env
+config_local.py
+secrets.yaml
+```
+
+---
+
+# Running Movie Search
+
+Search for a movie:
+
+```bash
+python movie_scraper.py "The Matrix"
+```
+
+JSON output:
+
+```bash
+python movie_scraper.py "Inception" --formato json
+```
+
+Query a specific field:
+
+```bash
+python movie_scraper.py "Inception" --campo director
+```
+
+---
+
+# Running Madrid Cinema Listings
+
+Retrieve current cinema listings:
+
+```bash
+python cartelera_scraper.py
+```
+
+Apply the user profile:
+
+```bash
+python cartelera_scraper.py --filtrar
+```
+
+Generate JSON:
+
+```bash
+python cartelera_scraper.py --formato json
+```
+
+Send filtered results through Telegram:
+
+```bash
+python cartelera_scraper.py --filtrar --telegram
+```
+
+---
+
+# Running the Telegram Bot
+
+Configure the Telegram token in your local configuration and run:
+
+```bash
+python telegram_bot.py
+```
+
+---
+
+# Running the Web Interface
+
+Start the Flask application:
+
+```bash
+python web_app.py
+```
+
+Then open the local address configured in `config.py`.
+
+---
+
+# Using Ollama
+
+Install and start Ollama.
+
+For example:
+
+```bash
+ollama pull qwen2.5:3b
+```
+
+Then verify that it is available:
+
+```bash
+ollama run qwen2.5:3b
+```
+
+The application can use the model for conversational enrichment and other agent functionality.
+
+---
+
+# Alexa Skill
+
+The Alexa implementation has its own documentation:
+
+```text
+alexa_skill/README_ALEXA.md
+```
+
+Its core architecture is:
+
+```text
+Alexa
+  │
+  ▼
+AWS Lambda
+  │
+  ▼
+Movie Cache
+  │
+  ▼
+OMDb
+```
+
+The API key should be stored as an AWS Lambda environment variable and never committed to the repository.
+
+---
+
+# Security
+
+Sensitive configuration should never be committed.
+
+The repository excludes common secret files, including:
+
+```text
+.env
+config.py
+config.json
+config_local.py
+secrets.yaml
+```
+
+Before publishing the repository, verify tracked files with:
+
+```bash
+git status
+git ls-files
+```
+
+If a secret was committed previously, adding it to `.gitignore` is not sufficient; it should also be removed from Git history and the corresponding credential rotated.
+
+---
+
+# Technologies
+
+## Core
+
+* Python
+* Requests
+* BeautifulSoup
+* lxml
+
+## AI
+
+* Ollama
+* Qwen 2.5
+* LangChain
+* DeepSeek
+
+## Interfaces
+
+* Flask
+* Telegram Bot API
+* Amazon Alexa
+* Command Line Interface
+
+## Automation
+
+* cron
+* n8n
+
+## External Data
+
+* SensaCine
+* eCartelera
+* OMDb
+* Wegow
+
+## Integration
+
+* iCalendar / RFC 5545
+* AWS Lambda
+* Optional DynamoDB
+
+## Experimental
+
+* ComfyUI
+* ACE-Step
+
+---
+
+# Design Principles
+
+The project demonstrates several intelligent-agent and software-engineering concepts:
+
+* Modular agent design
+* Multi-interface systems
+* Tool integration
+* LLM augmentation
+* Local language models
+* Web scraping
+* API integration
+* Conversational interfaces
+* Voice interfaces
+* Personalization
+* Caching
+* Scheduled automation
+* Graceful degradation
+* Guardrails
+* Sentiment analysis
+* Event/calendar generation
+
+---
+
+# Academic Context
+
+This project was developed for **Intelligent Systems II** as an intelligent-agents practical project.
+
+The goal was to explore how an intelligent system can combine:
+
+* Information retrieval
+* Web interaction
+* LLMs
+* Multiple user interfaces
+* Automation
+* External tools
+* Personalized behavior
+
+into a reusable agent-oriented architecture.
+
+---
+
+# License
+
+See the repository license for applicable terms.
+
+
+
+## Spanish translation
+## Agente Inteligente para Peliculas — Multi-Frontend
 
 **Asignatura:** Sistemas Inteligentes II  
 **Profesor:** Francisco Serradilla  
